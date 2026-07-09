@@ -24,3 +24,7 @@ npm run dev
 ## Refreshing GTFS data
 
 MTA publishes new schedules a few times a year (current feed valid through the date in `feed_info.txt`). Run `npm run build-data` and commit the updated `data/` files.
+
+---
+
+Built by [Devin](https://devin.ai)

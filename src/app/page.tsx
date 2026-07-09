@@ -149,6 +149,13 @@ export default function Home() {
             Enter two NYC locations to see your options.
           </div>
         )}
+
+        <footer className="mt-auto pt-4 text-center text-xs text-zinc-400">
+          Built by{" "}
+          <a href="https://devin.ai" className="underline hover:text-zinc-600" target="_blank" rel="noopener noreferrer">
+            Devin
+          </a>
+        </footer>
       </div>
 
       <div className="min-h-[40dvh] flex-1">
