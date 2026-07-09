@@ -88,7 +88,7 @@ export default function ItineraryCard({
                 onStar();
               }
             }}
-            className={`-mr-1 -mt-1 px-1 text-lg leading-none transition hover:scale-110 ${
+            className={`-mr-2 -mt-2 p-2 text-lg leading-none transition hover:scale-110 ${
               starred ? "text-amber-400" : "text-zinc-300 hover:text-amber-400"
             }`}
           >
