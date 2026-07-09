@@ -139,7 +139,10 @@ export default function Home() {
   const display = useMemo(() => {
     if (!ranked) return null;
     if (showStarred) return (itins ?? []).filter((i) => starred.has(i.key));
-    if (showSmartPicks) return ranked.filter((i) => smartPickKeys.has(i.key));
+    if (showSmartPicks)
+      return ranked
+        .filter((i) => smartPickKeys.has(i.key))
+        .sort((a, b) => a.totalSeconds - b.totalSeconds);
     const list = [...ranked];
     if (smartPick && !list.some((i) => i.key === smartPick.key)) list.unshift(smartPick);
     return list.sort(
@@ -271,11 +274,13 @@ export default function Home() {
             min={0}
             max={100}
             value={slider}
+            disabled={showSmartPicks}
             onChange={(e) => {
               setSlider(+e.target.value);
               setSliderTouched(true);
+              setShowSmartPicks(false);
             }}
-            className="walk-slider w-full"
+            className="walk-slider w-full disabled:cursor-not-allowed disabled:opacity-40"
           />
           <p className="mt-1 text-[11px] text-zinc-400">
             Slide right to trade subway transfers for more walking — results re-rank live.
