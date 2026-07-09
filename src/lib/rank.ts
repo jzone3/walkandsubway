@@ -11,24 +11,25 @@ export function rankItineraries(
     itins = itins.filter((it) => it.transfers <= maxTransfers);
   }
   const s = Math.min(100, Math.max(0, slider)) / 100;
-  const walkWeight = 1.8 - 1.25 * s; // 1.8 -> 0.55
-  const transferPenalty = 120 + 1880 * s; // 2min -> ~33min equivalent
+  // the slider picks a target amount of walking: leftmost = the least walking
+  // any option needs, rightmost = walking the whole way. Rank by how close
+  // each option's walk time is to the target, with total time breaking ties.
+  let minWalk = Infinity;
+  let maxWalk = 0;
+  for (const it of itins) {
+    if (it.walkSeconds < minWalk) minWalk = it.walkSeconds;
+    if (it.walkSeconds > maxWalk) maxWalk = it.walkSeconds;
+  }
+  if (!isFinite(minWalk)) return [];
+  const target = minWalk + s * (maxWalk - minWalk);
   const scored = itins.map((it) => ({
     it,
     score:
-      it.rideSeconds +
-      it.waitSeconds +
-      it.walkSeconds * walkWeight +
-      it.transfers * transferPenalty,
+      Math.abs(it.walkSeconds - target) +
+      0.25 * it.totalSeconds +
+      it.transfers * 120,
   }));
   scored.sort((a, b) => a.score - b.score);
-  // fully maxxed: walking is the whole point — prefer the highest walking share
-  if (s >= 1) {
-    scored.sort(
-      (a, b) =>
-        b.it.walkSeconds / b.it.totalSeconds - a.it.walkSeconds / a.it.totalSeconds
-    );
-  }
   const out: Itinerary[] = [];
   const seen = new Set<string>();
   const seenLines = new Set<string>();

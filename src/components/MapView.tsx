@@ -68,7 +68,7 @@ export default function MapView({
           // between stations are shown as dots on the route instead
           i === 0 || i === itinerary.legs.length - 1 ? (
             <Polyline
-              key={i}
+              key={`${itinerary.key}-${i}-walk-dotted`}
               positions={[
                 [l.fromLat, l.fromLon],
                 [l.toLat, l.toLon],
@@ -77,7 +77,7 @@ export default function MapView({
             />
           ) : (
             <Polyline
-              key={i}
+              key={`${itinerary.key}-${i}-walk`}
               positions={[
                 [l.fromLat, l.fromLon],
                 [l.toLat, l.toLon],
@@ -87,7 +87,7 @@ export default function MapView({
           )
         ) : (
           <Polyline
-            key={i}
+            key={`${itinerary.key}-${i}-transit`}
             positions={l.stops.map((s) => [s.lat, s.lon] as [number, number])}
             pathOptions={{ color: `#${l.routeColor || "555"}`, weight: 5, opacity: 0.9 }}
           />
@@ -101,7 +101,7 @@ export default function MapView({
         if (isFirst)
           markers.push(
             <CircleMarker
-              key={`b${i}`}
+              key={`${itinerary.key}-b${i}`}
               center={[l.stops[0].lat, l.stops[0].lon]}
               radius={5}
               pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
@@ -112,7 +112,7 @@ export default function MapView({
         else
           markers.push(
             <CircleMarker
-              key={`t${i}`}
+              key={`${itinerary.key}-t${i}`}
               center={[l.stops[0].lat, l.stops[0].lon]}
               radius={6}
               pathOptions={{ color: "#18181b", fillColor: "white", fillOpacity: 1, weight: 3 }}
@@ -123,7 +123,7 @@ export default function MapView({
         if (isLast)
           markers.push(
             <CircleMarker
-              key={`a${i}`}
+              key={`${itinerary.key}-a${i}`}
               center={[l.stops[l.stops.length - 1].lat, l.stops[l.stops.length - 1].lon]}
               radius={5}
               pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
