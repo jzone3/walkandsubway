@@ -12,11 +12,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* the app is designed light-only; keep it light even when the OS is in dark mode */
+:root {
+  color-scheme: light only;
 }
 
 body {
