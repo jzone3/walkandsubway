@@ -118,16 +118,25 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAdvanced((v) => !v)}
-              className="text-xs text-zinc-500 underline decoration-dotted hover:text-zinc-800"
+              className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                showAdvanced
+                  ? "border-zinc-400 bg-zinc-100 text-zinc-800"
+                  : "border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-800"
+              }`}
             >
-              {showAdvanced ? "▾ advanced" : "▸ advanced"}
+              <span className={`inline-block transition-transform ${showAdvanced ? "rotate-90" : ""}`}>▸</span>
+              Advanced
             </button>
             <button
               onClick={go}
               disabled={!origin || !dest || loading}
-              className="ml-auto rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="ml-auto inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              {loading ? "…" : "Go"}
+              {loading ? (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                "Go"
+              )}
             </button>
           </div>
           {showAdvanced && (
