@@ -24,3 +24,42 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* walk preference slider: subway blue -> walking orange */
+.walk-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #0294de, #21c19a, #f59e0b);
+  outline: none;
+  cursor: pointer;
+}
+.walk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid #18181b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.walk-slider::-webkit-slider-thumb:hover,
+.walk-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.walk-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid #18181b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.walk-slider::-moz-range-thumb:hover,
+.walk-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}

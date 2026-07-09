@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import LocationInput, { Place } from "@/components/LocationInput";
 import ItineraryCard from "@/components/ItineraryCard";
 import { Itinerary } from "@/lib/types";
@@ -110,9 +112,8 @@ export default function Home() {
 
         <div className="rounded-xl border border-zinc-200 bg-white p-3">
           <div className="mb-1 flex items-center justify-between text-xs font-medium text-zinc-600">
-            <span>fewest steps</span>
-            <span className="text-sm font-bold text-zinc-900">walk preference: {slider}</span>
-            <span>walkmaxx</span>
+            <span>🚇 fewest steps</span>
+            <span>walkmaxx 🚶</span>
           </div>
           <input
             type="range"
@@ -120,7 +121,7 @@ export default function Home() {
             max={100}
             value={slider}
             onChange={(e) => setSlider(+e.target.value)}
-            className="w-full accent-zinc-900"
+            className="walk-slider w-full"
           />
           <p className="mt-1 text-[11px] text-zinc-400">
             Slide right to trade subway transfers for more walking — results re-rank live.
@@ -133,16 +134,26 @@ export default function Home() {
           <div className="text-sm text-zinc-500">No routes found — try different points.</div>
         )}
 
-        {ranked?.map((it, i) => (
-          <ItineraryCard
-            key={it.key}
-            it={it}
-            rank={i + 1}
-            selected={selected?.key === it.key}
-            delays={delays}
-            onClick={() => setSelectedKey(it.key)}
-          />
-        ))}
+        <AnimatePresence mode="popLayout" initial={false}>
+          {ranked?.map((it, i) => (
+            <motion.div
+              key={it.key}
+              layout
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 32 }}
+            >
+              <ItineraryCard
+                it={it}
+                rank={i + 1}
+                selected={selected?.key === it.key}
+                delays={delays}
+                onClick={() => setSelectedKey(it.key)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {!itins && !loading && (
           <div className="mt-4 text-center text-sm text-zinc-400">
@@ -150,10 +161,10 @@ export default function Home() {
           </div>
         )}
 
-        <footer className="mt-auto pt-4 text-center text-xs text-zinc-400">
+        <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-xs text-zinc-400">
           Built by{" "}
-          <a href="https://devin.ai" className="underline hover:text-zinc-600" target="_blank" rel="noopener noreferrer">
-            Devin
+          <a href="https://devin.ai" target="_blank" rel="noopener noreferrer" className="inline-flex items-center opacity-70 transition hover:opacity-100">
+            <Image src="/devin-logo.png" alt="Devin" width={60} height={28} className="h-5 w-auto" />
           </a>
         </footer>
       </div>

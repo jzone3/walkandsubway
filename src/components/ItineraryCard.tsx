@@ -38,31 +38,46 @@ export default function ItineraryCard({
         selected ? "border-zinc-800 bg-zinc-50 shadow-sm" : "border-zinc-200 bg-white hover:border-zinc-400"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-semibold text-zinc-400">#{rank}</span>
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex items-end gap-4">
+          <div>
+            <div className="text-2xl font-bold leading-none">{fmtDuration(it.totalSeconds)}</div>
+            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">total</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold leading-none text-zinc-600">{Math.round(it.walkSeconds / 60)}′</div>
+            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">🚶 walk</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold leading-none text-zinc-600">{Math.round(it.rideSeconds / 60)}′</div>
+            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">🚇 ride</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-zinc-500">
+            {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
+          </div>
+          <div className="text-xs text-zinc-400">#{rank}</div>
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+        <span className="flex flex-wrap items-center gap-1.5">
           {it.legs.map((l, i) =>
             l.kind === "transit" ? (
               <RouteBullet key={i} name={l.routeName} color={l.routeColor} />
             ) : l.seconds >= 120 ? (
-              <span key={i} className="text-xs text-zinc-500">
+              <span key={i} className="text-zinc-500">
                 🚶{Math.round(l.seconds / 60)}′
               </span>
             ) : null
           )}
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-semibold">{fmtDuration(it.totalSeconds)}</div>
-          <div className="text-xs text-zinc-500">
-            {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
-          </div>
-        </div>
-      </div>
-      <div className="mt-2 flex items-center gap-3 text-xs text-zinc-600">
+        </span>
+        <span className="text-zinc-400">·</span>
         <span>
           {it.transfers} transfer{it.transfers === 1 ? "" : "s"}
         </span>
-        <span>🚶 {fmtDuration(it.walkSeconds)} ({walkPct}%)</span>
+        <span className="text-zinc-400">·</span>
+        <span>{walkPct}% walking</span>
         {it.waitSeconds > 60 && <span>⏳ {fmtDuration(it.waitSeconds)} wait</span>}
         {maxDelay > 90 && (
           <span className="font-medium text-amber-600">⚠ +{Math.round(maxDelay / 60)} min delays</span>
