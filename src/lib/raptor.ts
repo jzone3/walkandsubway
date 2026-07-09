@@ -281,6 +281,13 @@ function reconstruct(
         arr: trip.arr[p.boardPos + off],
         dep: trip.dep[p.boardPos + off],
       }));
+      const nextStops = pat.stops.slice(p.alightPos + 1, p.alightPos + 13).map((si, off) => ({
+        name: tt.stops[si].name,
+        lat: tt.stops[si].lat,
+        lon: tt.stops[si].lon,
+        arr: trip.arr[p.alightPos + 1 + off],
+        dep: trip.dep[p.alightPos + 1 + off],
+      }));
       const leg: TransitLeg = {
         kind: "transit",
         routeId: routeInfo.id,
@@ -293,6 +300,7 @@ function reconstruct(
         boardTime: trip.dep[p.boardPos],
         alightTime: trip.arr[p.alightPos],
         stops: stopsAlong,
+        next: nextStops.length > 0 ? nextStops : undefined,
       };
       legs.unshift(leg);
       transitLegs.unshift(leg);
@@ -378,9 +386,10 @@ function finalizeVariant(req: RouteRequest, legs: Leg[]): Itinerary | null {
 }
 
 // Generate walk-trading permutations of found itineraries: board the first
-// train further along its line (walk more, ride less) or hop off the last
-// train early and walk the rest. These are rarely time-optimal so RAPTOR
-// alone won't surface them, but they're exactly what walkmaxxing wants.
+// train further along its line (walk more, ride less), hop off the last
+// train early and walk the rest, or overshoot — stay on past the nearest
+// stop and walk back. These are rarely time-optimal so RAPTOR alone won't
+// surface them, but they're exactly what walkmaxxing wants.
 export function walkVariants(req: RouteRequest, itins: Itinerary[]): Itinerary[] {
   const out: Itinerary[] = [];
   for (const it of itins) {
@@ -453,6 +462,37 @@ export function walkVariants(req: RouteRequest, itins: Itinerary[]): Itinerary[]
       ];
       const v = finalizeVariant(req, legs);
       if (v && v.walkSeconds > it.walkSeconds && v.totalSeconds <= it.totalSeconds + MAX_VARIANT_EXTRA) out.push(v);
+    }
+
+    // overshoot: ride the last leg past the nearest stop and walk back
+    for (const c of lastLeg.next ?? []) {
+      const w = walkSeconds(haversineMeters(c.lat, c.lon, req.toLat, req.toLon));
+      if (w > MAX_VARIANT_WALK) continue;
+      const upto = (lastLeg.next ?? []).indexOf(c);
+      const newLeg: TransitLeg = {
+        ...lastLeg,
+        alightStop: c.name,
+        alightTime: c.arr,
+        stops: [...lastLeg.stops, ...(lastLeg.next ?? []).slice(0, upto + 1)],
+        next: undefined,
+      };
+      const legs: Leg[] = [
+        ...it.legs.slice(0, lastIdx),
+        newLeg,
+        {
+          kind: "walk",
+          from: c.name,
+          fromLat: c.lat,
+          fromLon: c.lon,
+          to: "Destination",
+          toLat: req.toLat,
+          toLon: req.toLon,
+          seconds: w,
+          meters: Math.round(haversineMeters(c.lat, c.lon, req.toLat, req.toLon) * DETOUR_FACTOR),
+        },
+      ];
+      const v = finalizeVariant(req, legs);
+      if (v && v.totalSeconds <= it.totalSeconds + MAX_VARIANT_EXTRA) out.push(v);
     }
   }
   return out;

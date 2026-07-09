@@ -48,5 +48,9 @@ export async function POST(req: NextRequest) {
     seen.add(v.key);
     itineraries.push(v);
   }
+  // trip-continuation data is only needed for variant generation
+  for (const it of itineraries) {
+    for (const l of it.legs) if (l.kind === "transit") delete l.next;
+  }
   return NextResponse.json({ itineraries, computeMs: Date.now() - started });
 }
