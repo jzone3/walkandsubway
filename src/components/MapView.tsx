@@ -64,14 +64,27 @@ export default function MapView({
       {dest && <Marker position={[dest.lat, dest.lon]} icon={destIcon}><Tooltip>Destination</Tooltip></Marker>}
       {itinerary?.legs.map((l, i) =>
         l.kind === "walk" ? (
-          <Polyline
-            key={i}
-            positions={[
-              [l.fromLat, l.fromLon],
-              [l.toLat, l.toLon],
-            ]}
-            pathOptions={{ color: "#555", weight: 3, dashArray: "4 7" }}
-          />
+          // dotted lines are for actual walking (access/egress); transfer walks
+          // between stations are shown as dots on the route instead
+          i === 0 || i === itinerary.legs.length - 1 ? (
+            <Polyline
+              key={i}
+              positions={[
+                [l.fromLat, l.fromLon],
+                [l.toLat, l.toLon],
+              ]}
+              pathOptions={{ color: "#555", weight: 3, dashArray: "4 7" }}
+            />
+          ) : (
+            <Polyline
+              key={i}
+              positions={[
+                [l.fromLat, l.fromLon],
+                [l.toLat, l.toLon],
+              ]}
+              pathOptions={{ color: "#555", weight: 5, opacity: 0.9 }}
+            />
+          )
         ) : (
           <Polyline
             key={i}
@@ -80,28 +93,46 @@ export default function MapView({
           />
         )
       )}
-      {itinerary?.legs.flatMap((l, i) =>
-        l.kind === "transit"
-          ? [
-              <CircleMarker
-                key={`b${i}`}
-                center={[l.stops[0].lat, l.stops[0].lon]}
-                radius={5}
-                pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
-              >
-                <Tooltip>{l.boardStop}</Tooltip>
-              </CircleMarker>,
-              <CircleMarker
-                key={`a${i}`}
-                center={[l.stops[l.stops.length - 1].lat, l.stops[l.stops.length - 1].lon]}
-                radius={5}
-                pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
-              >
-                <Tooltip>{l.alightStop}</Tooltip>
-              </CircleMarker>,
-            ]
-          : []
-      )}
+      {itinerary?.legs.flatMap((l, i) => {
+        if (l.kind !== "transit") return [];
+        const isFirst = itinerary.legs.slice(0, i).every((p) => p.kind !== "transit");
+        const isLast = itinerary.legs.slice(i + 1).every((p) => p.kind !== "transit");
+        const markers = [];
+        if (isFirst)
+          markers.push(
+            <CircleMarker
+              key={`b${i}`}
+              center={[l.stops[0].lat, l.stops[0].lon]}
+              radius={5}
+              pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
+            >
+              <Tooltip>{l.boardStop}</Tooltip>
+            </CircleMarker>
+          );
+        else
+          markers.push(
+            <CircleMarker
+              key={`t${i}`}
+              center={[l.stops[0].lat, l.stops[0].lon]}
+              radius={6}
+              pathOptions={{ color: "#18181b", fillColor: "white", fillOpacity: 1, weight: 3 }}
+            >
+              <Tooltip>Transfer · {l.boardStop}</Tooltip>
+            </CircleMarker>
+          );
+        if (isLast)
+          markers.push(
+            <CircleMarker
+              key={`a${i}`}
+              center={[l.stops[l.stops.length - 1].lat, l.stops[l.stops.length - 1].lon]}
+              radius={5}
+              pathOptions={{ color: `#${l.routeColor || "555"}`, fillColor: "white", fillOpacity: 1, weight: 2.5 }}
+            >
+              <Tooltip>{l.alightStop}</Tooltip>
+            </CircleMarker>
+          );
+        return markers;
+      })}
     </MapContainer>
   );
 }
