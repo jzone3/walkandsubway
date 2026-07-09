@@ -24,6 +24,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [starred, setStarred] = useState<Set<string>>(new Set());
+  const [sliderTouched, setSliderTouched] = useState(false);
   const [delays, setDelays] = useState<Record<string, number>>({});
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
@@ -82,6 +83,7 @@ export default function Home() {
       setItins(data.itineraries);
       setSelectedKey(null);
       setStarred(new Set());
+      setSliderTouched(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
@@ -100,17 +102,17 @@ export default function Home() {
         : null,
     [itins, slider, maxTransfers]
   );
-  // smart pick: the most walking you can get while staying within ~5 min of
-  // the fastest option
+  // smart pick: the most walking you can get while staying within ~8 min of
+  // the fastest option; hidden once the user starts moving the slider
   const smartPick = useMemo(() => {
-    if (!itins || itins.length === 0) return null;
+    if (sliderTouched || !itins || itins.length === 0) return null;
     const pool = maxTransfers >= 0 ? itins.filter((i) => i.transfers <= maxTransfers) : itins;
     if (pool.length === 0) return null;
     const fastest = Math.min(...pool.map((i) => i.totalSeconds));
     return pool
-      .filter((i) => i.totalSeconds <= fastest + 5 * 60)
+      .filter((i) => i.totalSeconds <= fastest + 8 * 60)
       .reduce((a, b) => (b.walkSeconds > a.walkSeconds ? b : a));
-  }, [itins, maxTransfers]);
+  }, [itins, maxTransfers, sliderTouched]);
   const display = useMemo(() => {
     if (!ranked) return null;
     const list = [...ranked];
@@ -215,7 +217,10 @@ export default function Home() {
             min={0}
             max={100}
             value={slider}
-            onChange={(e) => setSlider(+e.target.value)}
+            onChange={(e) => {
+              setSlider(+e.target.value);
+              setSliderTouched(true);
+            }}
             className="walk-slider w-full"
           />
           <p className="mt-1 text-[11px] text-zinc-400">

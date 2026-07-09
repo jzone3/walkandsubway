@@ -49,7 +49,7 @@ export default function ItineraryCard({
     >
       {smartPick && (
         <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-          ⚡ smart pick · most walking within 5 min of fastest
+          ⚡ smart pick · most walking within 8 min of fastest
         </div>
       )}
       <div className="flex items-end justify-between gap-2">
