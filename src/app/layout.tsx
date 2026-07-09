@@ -13,8 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://walkandsubway.com"),
   title: "walkmaxxing",
   description: "NYC transit routing where you pick the walking/transfer tradeoff",
+  openGraph: {
+    title: "walkmaxxing",
+    description: "NYC transit routing where you pick the walking/transfer tradeoff",
+    url: "https://walkandsubway.com",
+    siteName: "walkmaxxing",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "walkmaxxing — slide right to trade subway transfers for more walking" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "walkmaxxing",
+    description: "NYC transit routing where you pick the walking/transfer tradeoff",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
