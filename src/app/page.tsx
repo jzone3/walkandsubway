@@ -25,6 +25,7 @@ export default function Home() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [starred, setStarred] = useState<Set<string>>(new Set());
   const [sliderTouched, setSliderTouched] = useState(false);
+  const [showStarred, setShowStarred] = useState(false);
   const [delays, setDelays] = useState<Record<string, number>>({});
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
@@ -84,6 +85,7 @@ export default function Home() {
       setSelectedKey(null);
       setStarred(new Set());
       setSliderTouched(false);
+      setShowStarred(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
@@ -115,16 +117,19 @@ export default function Home() {
   }, [itins, maxTransfers, sliderTouched]);
   const display = useMemo(() => {
     if (!ranked) return null;
+    if (showStarred) return (itins ?? []).filter((i) => starred.has(i.key));
     const list = [...ranked];
     if (smartPick && !list.some((i) => i.key === smartPick.key)) list.unshift(smartPick);
-    const prio = (i: Itinerary) => (starred.has(i.key) ? 0 : i.key === smartPick?.key ? 1 : 2);
-    return list.sort((a, b) => prio(a) - prio(b));
-  }, [ranked, smartPick, starred]);
+    return list.sort(
+      (a, b) => (a.key === smartPick?.key ? 0 : 1) - (b.key === smartPick?.key ? 0 : 1)
+    );
+  }, [ranked, itins, smartPick, starred, showStarred]);
   const toggleStar = useCallback((key: string) => {
     setStarred((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      if (next.size === 0) setShowStarred(false);
       return next;
     });
   }, []);
@@ -235,6 +240,19 @@ export default function Home() {
         )}
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+        {starred.size > 0 && (
+          <button
+            onClick={() => setShowStarred((v) => !v)}
+            className={`self-start rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              showStarred
+                ? "border-amber-400 bg-amber-50 text-amber-700"
+                : "border-zinc-300 bg-white text-zinc-600 hover:border-amber-400 hover:text-amber-600"
+            }`}
+          >
+            ★ starred ({starred.size})
+          </button>
+        )}
 
         {display && display.length === 0 && (
           <div className="text-sm text-zinc-500">No routes found — try different points.</div>
