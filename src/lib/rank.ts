@@ -12,16 +12,17 @@ export function rankItineraries(
   }
   const s = Math.min(100, Math.max(0, slider)) / 100;
   // the slider picks a target amount of walking: leftmost = the least walking
-  // any option needs, rightmost = walking the whole way. Rank by how close
-  // each option's walk time is to the target, with total time breaking ties.
-  let minWalk = Infinity;
-  let maxWalk = 0;
-  for (const it of itins) {
-    if (it.walkSeconds < minWalk) minWalk = it.walkSeconds;
-    if (it.walkSeconds > maxWalk) maxWalk = it.walkSeconds;
-  }
-  if (!isFinite(minWalk)) return [];
-  const target = minWalk + s * (maxWalk - minWalk);
+  // any option needs, rightmost = walking the whole way. The target is a
+  // quantile of the observed walk times (not a linear interpolation), so the
+  // options are spread uniformly across the slider even when walk times
+  // cluster near one end. Rank by how close each option's walk time is to
+  // the target, with total time breaking ties.
+  if (itins.length === 0) return [];
+  const walks = [...new Set(itins.map((it) => it.walkSeconds))].sort((a, b) => a - b);
+  const pos = s * (walks.length - 1);
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  const target = walks[lo] + (walks[hi] - walks[lo]) * (pos - lo);
   const scored = itins.map((it) => ({
     it,
     score:

@@ -77,3 +77,8 @@ body {
     height: 28px;
   }
 }
+
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+}
