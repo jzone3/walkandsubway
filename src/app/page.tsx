@@ -93,7 +93,7 @@ export default function Home() {
   const ranked = useMemo(
     () =>
       itins
-        ? rankItineraries(itins, slider, 5, maxTransfers >= 0 ? maxTransfers : undefined)
+        ? rankItineraries(itins, slider, 8, maxTransfers >= 0 ? maxTransfers : undefined)
         : null,
     [itins, slider, maxTransfers]
   );
@@ -231,8 +231,14 @@ export default function Home() {
 
         <footer className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-xs text-zinc-400">
           Built by{" "}
-          <a href="https://devin.ai" target="_blank" rel="noopener noreferrer" className="inline-flex items-center opacity-70 transition hover:opacity-100">
-            <Image src="/devin-logo.png" alt="Devin" width={60} height={28} className="h-5 w-auto" />
+          <a
+            href="https://devin.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-zinc-600 opacity-80 transition hover:opacity-100"
+          >
+            <Image src="/devin-mark.svg" alt="" width={16} height={16} className="h-4 w-4" />
+            Devin
           </a>
         </footer>
       </div>
