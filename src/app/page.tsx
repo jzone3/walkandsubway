@@ -23,6 +23,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [starred, setStarred] = useState<Set<string>>(new Set());
   const [delays, setDelays] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function Home() {
       const data = await res.json();
       setItins(data.itineraries);
       setSelectedKey(null);
+      setStarred(new Set());
     } catch (e) {
       setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
@@ -97,10 +99,36 @@ export default function Home() {
         : null,
     [itins, slider, maxTransfers]
   );
+  // smart pick: the most walking you can get while staying within ~5 min of
+  // the fastest option
+  const smartPick = useMemo(() => {
+    if (!itins || itins.length === 0) return null;
+    const pool = maxTransfers >= 0 ? itins.filter((i) => i.transfers <= maxTransfers) : itins;
+    if (pool.length === 0) return null;
+    const fastest = Math.min(...pool.map((i) => i.totalSeconds));
+    return pool
+      .filter((i) => i.totalSeconds <= fastest + 5 * 60)
+      .reduce((a, b) => (b.walkSeconds > a.walkSeconds ? b : a));
+  }, [itins, maxTransfers]);
+  const display = useMemo(() => {
+    if (!ranked) return null;
+    const list = [...ranked];
+    if (smartPick && !list.some((i) => i.key === smartPick.key)) list.unshift(smartPick);
+    const prio = (i: Itinerary) => (starred.has(i.key) ? 0 : i.key === smartPick?.key ? 1 : 2);
+    return list.sort((a, b) => prio(a) - prio(b));
+  }, [ranked, smartPick, starred]);
+  const toggleStar = useCallback((key: string) => {
+    setStarred((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
   const selected = useMemo(() => {
-    if (!ranked || ranked.length === 0) return null;
-    return ranked.find((i) => i.key === selectedKey) ?? ranked[0];
-  }, [ranked, selectedKey]);
+    if (!display || display.length === 0) return null;
+    return display.find((i) => i.key === selectedKey) ?? display[0];
+  }, [display, selectedKey]);
 
   return (
     <div className="flex h-dvh flex-col md:flex-row">
@@ -198,12 +226,12 @@ export default function Home() {
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-        {ranked && ranked.length === 0 && (
+        {display && display.length === 0 && (
           <div className="text-sm text-zinc-500">No routes found — try different points.</div>
         )}
 
         <AnimatePresence mode="popLayout" initial={false}>
-          {ranked?.map((it, i) => (
+          {display?.map((it, i) => (
             <motion.div
               key={it.key}
               layout
@@ -217,6 +245,9 @@ export default function Home() {
                 rank={i + 1}
                 selected={selected?.key === it.key}
                 delays={delays}
+                starred={starred.has(it.key)}
+                smartPick={smartPick?.key === it.key}
+                onStar={() => toggleStar(it.key)}
                 onClick={() => setSelectedKey(it.key)}
               />
             </motion.div>

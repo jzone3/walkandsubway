@@ -18,12 +18,18 @@ export default function ItineraryCard({
   rank,
   selected,
   delays,
+  starred,
+  smartPick,
+  onStar,
   onClick,
 }: {
   it: Itinerary;
   rank: number;
   selected: boolean;
   delays: Record<string, number>;
+  starred: boolean;
+  smartPick: boolean;
+  onStar: () => void;
   onClick: () => void;
 }) {
   const walkPct = Math.round((it.walkSeconds / Math.max(1, it.totalSeconds)) * 100);
@@ -32,12 +38,20 @@ export default function ItineraryCard({
     ...it.legs.filter((l) => l.kind === "transit").map((l) => delays[l.routeId] ?? 0)
   );
   return (
-    <button
+    <div
       onClick={onClick}
-      className={`w-full rounded-xl border p-3 text-left transition ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      className={`w-full cursor-pointer rounded-xl border p-3 text-left transition ${
         selected ? "border-zinc-800 bg-zinc-50 shadow-sm" : "border-zinc-200 bg-white hover:border-zinc-400"
-      }`}
+      } ${smartPick && !selected ? "border-emerald-300" : ""}`}
     >
+      {smartPick && (
+        <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+          ⚡ smart pick · most walking within 5 min of fastest
+        </div>
+      )}
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-end gap-3">
           <div>
@@ -59,7 +73,27 @@ export default function ItineraryCard({
             <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">ride</div>
           </div>
         </div>
-        <div className="text-right">
+        <div className="flex flex-col items-end">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={starred ? "unstar route" : "star route"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStar();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.stopPropagation();
+                onStar();
+              }
+            }}
+            className={`-mr-1 -mt-1 px-1 text-lg leading-none transition hover:scale-110 ${
+              starred ? "text-amber-400" : "text-zinc-300 hover:text-amber-400"
+            }`}
+          >
+            {starred ? "★" : "☆"}
+          </span>
           <div className="whitespace-nowrap text-xs text-zinc-500">
             {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
           </div>
@@ -111,6 +145,6 @@ export default function ItineraryCard({
           )}
         </ol>
       )}
-    </button>
+    </div>
   );
 }
