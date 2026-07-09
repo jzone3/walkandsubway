@@ -17,6 +17,8 @@ export default function Home() {
   const [dateStr, setDateStr] = useState("");
   const [timeStr, setTimeStr] = useState("");
   const [slider, setSlider] = useState(50);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [maxTransfers, setMaxTransfers] = useState(-1); // -1 = no limit
   const [itins, setItins] = useState<Itinerary[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,27 @@ export default function Home() {
     const now = nowInNY();
     setDateStr(now.dateStr);
     setTimeStr(now.timeStr);
+    try {
+      const saved = localStorage.getItem("walkmaxxing:lastSearch");
+      if (saved) {
+        const s = JSON.parse(saved);
+        if (s.origin) setOrigin(s.origin);
+        if (s.dest) setDest(s.dest);
+        if (typeof s.slider === "number") setSlider(s.slider);
+        if (typeof s.maxTransfers === "number") setMaxTransfers(s.maxTransfers);
+      }
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    if (!origin && !dest) return;
+    try {
+      localStorage.setItem(
+        "walkmaxxing:lastSearch",
+        JSON.stringify({ origin, dest, slider, maxTransfers })
+      );
+    } catch {}
+  }, [origin, dest, slider, maxTransfers]);
 
   useEffect(() => {
     fetch("/api/rt")
@@ -68,7 +90,13 @@ export default function Home() {
     if (origin && dest) void go();
   }, [origin, dest, go]);
 
-  const ranked = useMemo(() => (itins ? rankItineraries(itins, slider, 5) : null), [itins, slider]);
+  const ranked = useMemo(
+    () =>
+      itins
+        ? rankItineraries(itins, slider, 5, maxTransfers >= 0 ? maxTransfers : undefined)
+        : null,
+    [itins, slider, maxTransfers]
+  );
   const selected = useMemo(() => {
     if (!ranked || ranked.length === 0) return null;
     return ranked.find((i) => i.key === selectedKey) ?? ranked[0];
@@ -87,27 +115,52 @@ export default function Home() {
         <div className="flex flex-col gap-2">
           <LocationInput placeholder="From (e.g. home address)" value={origin} onSelect={setOrigin} />
           <LocationInput placeholder="To (e.g. office address)" value={dest} onSelect={setDest} />
-          <div className="flex gap-2">
-            <input
-              type="date"
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              value={dateStr}
-              onChange={(e) => setDateStr(e.target.value)}
-            />
-            <input
-              type="time"
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              value={timeStr}
-              onChange={(e) => setTimeStr(e.target.value)}
-            />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="text-xs text-zinc-500 underline decoration-dotted hover:text-zinc-800"
+            >
+              {showAdvanced ? "▾ advanced" : "▸ advanced"}
+            </button>
             <button
               onClick={go}
               disabled={!origin || !dest || loading}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="ml-auto rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
               {loading ? "…" : "Go"}
             </button>
           </div>
+          {showAdvanced && (
+            <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-white p-2">
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                />
+                <input
+                  type="time"
+                  className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                  value={timeStr}
+                  onChange={(e) => setTimeStr(e.target.value)}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-zinc-600">
+                transfer limit
+                <select
+                  className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+                  value={maxTransfers}
+                  onChange={(e) => setMaxTransfers(+e.target.value)}
+                >
+                  <option value={-1}>no limit</option>
+                  <option value={0}>0 (one seat)</option>
+                  <option value={1}>≤ 1</option>
+                  <option value={2}>≤ 2</option>
+                </select>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-zinc-200 bg-white p-3">
@@ -127,6 +180,12 @@ export default function Home() {
             Slide right to trade subway transfers for more walking — results re-rank live.
           </p>
         </div>
+
+        {loading && (
+          <div className="text-center text-[11px] text-zinc-400">
+            crunching subway + bus schedules… first search can take a few seconds
+          </div>
+        )}
 
         {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 

@@ -39,22 +39,28 @@ export default function ItineraryCard({
       }`}
     >
       <div className="flex items-end justify-between gap-2">
-        <div className="flex items-end gap-4">
+        <div className="flex items-end gap-3">
           <div>
-            <div className="text-2xl font-bold leading-none">{fmtDuration(it.totalSeconds)}</div>
-            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">total</div>
+            <div className="whitespace-nowrap text-xl font-bold leading-none">{fmtDuration(it.totalSeconds)}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">total</div>
           </div>
           <div>
-            <div className="text-2xl font-bold leading-none text-zinc-600">{Math.round(it.walkSeconds / 60)}′</div>
-            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">🚶 walk</div>
+            <div className="whitespace-nowrap text-xl font-bold leading-none text-zinc-600">
+              <span className="text-base">🚶</span>{Math.round(it.walkSeconds / 60)}
+              <span className="text-xs font-medium"> min</span>
+            </div>
+            <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">walk</div>
           </div>
           <div>
-            <div className="text-2xl font-bold leading-none text-zinc-600">{Math.round(it.rideSeconds / 60)}′</div>
-            <div className="mt-1 text-[11px] uppercase tracking-wide text-zinc-400">🚇 ride</div>
+            <div className="whitespace-nowrap text-xl font-bold leading-none text-zinc-600">
+              <span className="text-base">🚇</span>{Math.round(it.rideSeconds / 60)}
+              <span className="text-xs font-medium"> min</span>
+            </div>
+            <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">ride</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-zinc-500">
+          <div className="whitespace-nowrap text-xs text-zinc-500">
             {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
           </div>
           <div className="text-xs text-zinc-400">#{rank}</div>
@@ -67,7 +73,7 @@ export default function ItineraryCard({
               <RouteBullet key={i} name={l.routeName} color={l.routeColor} />
             ) : l.seconds >= 120 ? (
               <span key={i} className="text-zinc-500">
-                🚶{Math.round(l.seconds / 60)}′
+                🚶{Math.round(l.seconds / 60)}min
               </span>
             ) : null
           )}

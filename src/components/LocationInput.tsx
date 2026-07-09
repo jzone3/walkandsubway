@@ -20,8 +20,14 @@ export default function LocationInput({
   const [results, setResults] = useState<Place[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (value && value.label !== query) setQuery(value.label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -52,17 +58,45 @@ export default function LocationInput({
     }, 300);
   };
 
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const p = {
+          label: "Current location",
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+        };
+        onSelect(p);
+        setQuery(p.label);
+        setOpen(false);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   return (
     <div className="relative flex-1" ref={boxRef}>
       <input
-        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500"
+        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 pr-9 text-sm outline-none focus:border-zinc-500"
         placeholder={placeholder}
         value={query}
         onChange={(e) => search(e.target.value)}
         onFocus={() => results.length && setOpen(true)}
       />
+      <button
+        type="button"
+        title="Use current location"
+        onClick={useCurrentLocation}
+        className="absolute right-2 top-1.5 rounded p-1 text-sm text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+      >
+        {locating ? "…" : "📍"}
+      </button>
       {loading && (
-        <div className="absolute right-3 top-2.5 text-xs text-zinc-400">…</div>
+        <div className="absolute right-9 top-2.5 text-xs text-zinc-400">…</div>
       )}
       {open && results.length > 0 && (
         <ul className="absolute z-[1000] mt-1 w-full overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg">
