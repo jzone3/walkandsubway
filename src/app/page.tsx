@@ -26,6 +26,7 @@ export default function Home() {
   const [starred, setStarred] = useState<Set<string>>(new Set());
   const [sliderTouched, setSliderTouched] = useState(false);
   const [showStarred, setShowStarred] = useState(false);
+  const [showSmartPicks, setShowSmartPicks] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [delays, setDelays] = useState<Record<string, number>>({});
@@ -88,6 +89,7 @@ export default function Home() {
       setStarred(new Set());
       setSliderTouched(false);
       setShowStarred(false);
+      setShowSmartPicks(false);
       setVisibleCount(10);
     } catch (e) {
       setError(e instanceof Error ? e.message : "something went wrong");
@@ -118,15 +120,32 @@ export default function Home() {
       .filter((i) => i.totalSeconds <= fastest + 8 * 60)
       .reduce((a, b) => (b.walkSeconds > a.walkSeconds ? b : a));
   }, [itins, maxTransfers, sliderTouched]);
+  // smartpicks: the walk/time frontier — routes where getting more walking
+  // necessarily means a slower trip
+  const smartPickKeys = useMemo(() => {
+    if (!itins) return new Set<string>();
+    const pool = maxTransfers >= 0 ? itins.filter((i) => i.transfers <= maxTransfers) : itins;
+    const sorted = [...pool].sort((a, b) => a.totalSeconds - b.totalSeconds);
+    const keys = new Set<string>();
+    let maxWalk = -1;
+    for (const it of sorted) {
+      if (it.walkSeconds > maxWalk) {
+        keys.add(it.key);
+        maxWalk = it.walkSeconds;
+      }
+    }
+    return keys;
+  }, [itins, maxTransfers]);
   const display = useMemo(() => {
     if (!ranked) return null;
     if (showStarred) return (itins ?? []).filter((i) => starred.has(i.key));
+    if (showSmartPicks) return ranked.filter((i) => smartPickKeys.has(i.key));
     const list = [...ranked];
     if (smartPick && !list.some((i) => i.key === smartPick.key)) list.unshift(smartPick);
     return list.sort(
       (a, b) => (a.key === smartPick?.key ? 0 : 1) - (b.key === smartPick?.key ? 0 : 1)
     );
-  }, [ranked, itins, smartPick, starred, showStarred]);
+  }, [ranked, itins, smartPick, starred, showStarred, showSmartPicks, smartPickKeys]);
   const toggleStar = useCallback((key: string) => {
     setStarred((prev) => {
       const next = new Set(prev);
@@ -182,6 +201,20 @@ export default function Home() {
             >
               <span className={`inline-block transition-transform ${showAdvanced ? "rotate-90" : ""}`}>▸</span>
               Advanced
+            </button>
+            <button
+              onClick={() => {
+                setShowSmartPicks((v) => !v);
+                setShowStarred(false);
+              }}
+              disabled={!itins}
+              className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-40 ${
+                showSmartPicks
+                  ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                  : "border-zinc-300 bg-white text-zinc-600 hover:border-emerald-400 hover:text-emerald-700"
+              }`}
+            >
+              ⚡ Smartpicks
             </button>
             <button
               onClick={go}
@@ -259,7 +292,10 @@ export default function Home() {
 
         {starred.size > 0 && (
           <button
-            onClick={() => setShowStarred((v) => !v)}
+            onClick={() => {
+              setShowStarred((v) => !v);
+              setShowSmartPicks(false);
+            }}
             className={`self-start rounded-full border px-3 py-1.5 text-xs font-medium transition ${
               showStarred
                 ? "border-amber-400 bg-amber-50 text-amber-700"
