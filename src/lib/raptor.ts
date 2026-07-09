@@ -311,11 +311,9 @@ function reconstruct(
   const firstTransit = transitLegs[0];
   const accessWalkSecs = firstLeg.kind === "walk" ? firstLeg.seconds : 0;
   const departTime = firstTransit.boardTime - accessWalkSecs;
-  const lastTransit = transitLegs[transitLegs.length - 1];
-  const arriveTime = lastTransit.alightTime + egressWalk +
-    legs
-      .slice(legs.indexOf(lastTransit) + 1, -1)
-      .reduce((acc, l) => acc + (l.kind === "walk" ? l.seconds : 0), 0);
+  // use RAPTOR's computed arrival at the final stop so hidden in-station
+  // transfers are accounted for
+  const arriveTime = rounds[round][finalStop] + egressWalk;
 
   let walkSecs = 0;
   let rideSecs = 0;
