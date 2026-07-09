@@ -1,103 +1,159 @@
-import Image from "next/image";
+"use client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import LocationInput, { Place } from "@/components/LocationInput";
+import ItineraryCard from "@/components/ItineraryCard";
+import { Itinerary } from "@/lib/types";
+import { rankItineraries } from "@/lib/rank";
+import { nowInNY, dayBitFromDateStr, secondsFromTimeStr } from "@/lib/time";
+
+const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [origin, setOrigin] = useState<Place | null>(null);
+  const [dest, setDest] = useState<Place | null>(null);
+  const [dateStr, setDateStr] = useState("");
+  const [timeStr, setTimeStr] = useState("");
+  const [slider, setSlider] = useState(50);
+  const [itins, setItins] = useState<Itinerary[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [delays, setDelays] = useState<Record<string, number>>({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    const now = nowInNY();
+    setDateStr(now.dateStr);
+    setTimeStr(now.timeStr);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/rt")
+      .then((r) => r.json())
+      .then((d) => setDelays(d.routeDelays ?? {}))
+      .catch(() => {});
+  }, []);
+
+  const go = useCallback(async () => {
+    if (!origin || !dest || !dateStr || !timeStr) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/route", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromLat: origin.lat,
+          fromLon: origin.lon,
+          toLat: dest.lat,
+          toLon: dest.lon,
+          departTime: secondsFromTimeStr(timeStr),
+          dayBit: dayBitFromDateStr(dateStr),
+        }),
+      });
+      if (!res.ok) throw new Error(`routing failed (${res.status})`);
+      const data = await res.json();
+      setItins(data.itineraries);
+      setSelectedKey(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, [origin, dest, dateStr, timeStr]);
+
+  useEffect(() => {
+    if (origin && dest) void go();
+  }, [origin, dest, go]);
+
+  const ranked = useMemo(() => (itins ? rankItineraries(itins, slider, 5) : null), [itins, slider]);
+  const selected = useMemo(() => {
+    if (!ranked || ranked.length === 0) return null;
+    return ranked.find((i) => i.key === selectedKey) ?? ranked[0];
+  }, [ranked, selectedKey]);
+
+  return (
+    <div className="flex h-dvh flex-col md:flex-row">
+      <div className="flex w-full flex-col gap-3 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4 md:w-[440px] md:shrink-0">
+        <header>
+          <h1 className="text-xl font-bold tracking-tight">walkmaxxing 🚶🚇</h1>
+          <p className="text-xs text-zinc-500">
+            NYC transit routing where <em>you</em> pick the walking/transfer tradeoff
+          </p>
+        </header>
+
+        <div className="flex flex-col gap-2">
+          <LocationInput placeholder="From (e.g. home address)" value={origin} onSelect={setOrigin} />
+          <LocationInput placeholder="To (e.g. office address)" value={dest} onSelect={setDest} />
+          <div className="flex gap-2">
+            <input
+              type="date"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              value={dateStr}
+              onChange={(e) => setDateStr(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <input
+              type="time"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              value={timeStr}
+              onChange={(e) => setTimeStr(e.target.value)}
+            />
+            <button
+              onClick={go}
+              disabled={!origin || !dest || loading}
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {loading ? "…" : "Go"}
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        <div className="rounded-xl border border-zinc-200 bg-white p-3">
+          <div className="mb-1 flex items-center justify-between text-xs font-medium text-zinc-600">
+            <span>fewest steps</span>
+            <span className="text-sm font-bold text-zinc-900">walk preference: {slider}</span>
+            <span>walkmaxx</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={slider}
+            onChange={(e) => setSlider(+e.target.value)}
+            className="w-full accent-zinc-900"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <p className="mt-1 text-[11px] text-zinc-400">
+            Slide right to trade subway transfers for more walking — results re-rank live.
+          </p>
+        </div>
+
+        {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+        {ranked && ranked.length === 0 && (
+          <div className="text-sm text-zinc-500">No routes found — try different points.</div>
+        )}
+
+        {ranked?.map((it, i) => (
+          <ItineraryCard
+            key={it.key}
+            it={it}
+            rank={i + 1}
+            selected={selected?.key === it.key}
+            delays={delays}
+            onClick={() => setSelectedKey(it.key)}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ))}
+
+        {!itins && !loading && (
+          <div className="mt-4 text-center text-sm text-zinc-400">
+            Enter two NYC locations to see your options.
+          </div>
+        )}
+      </div>
+
+      <div className="min-h-[40dvh] flex-1">
+        <MapView itinerary={selected} origin={origin} dest={dest} />
+      </div>
     </div>
   );
 }
