@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -26,6 +26,8 @@ export default function Home() {
   const [starred, setStarred] = useState<Set<string>>(new Set());
   const [sliderTouched, setSliderTouched] = useState(false);
   const [showStarred, setShowStarred] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [delays, setDelays] = useState<Record<string, number>>({});
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
@@ -86,6 +88,7 @@ export default function Home() {
       setStarred(new Set());
       setSliderTouched(false);
       setShowStarred(false);
+      setVisibleCount(10);
     } catch (e) {
       setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
@@ -100,7 +103,7 @@ export default function Home() {
   const ranked = useMemo(
     () =>
       itins
-        ? rankItineraries(itins, slider, 8, maxTransfers >= 0 ? maxTransfers : undefined)
+        ? rankItineraries(itins, slider, Infinity, maxTransfers >= 0 ? maxTransfers : undefined)
         : null,
     [itins, slider, maxTransfers]
   );
@@ -133,6 +136,19 @@ export default function Home() {
       return next;
     });
   }, []);
+  const rendered = useMemo(() => display?.slice(0, visibleCount) ?? null, [display, visibleCount]);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setVisibleCount((c) => c + 10);
+      },
+      { rootMargin: "400px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [display]);
   const selected = useMemo(() => {
     if (!display || display.length === 0) return null;
     return display.find((i) => i.key === selectedKey) ?? display[0];
@@ -259,7 +275,7 @@ export default function Home() {
         )}
 
         <AnimatePresence mode="popLayout" initial={false}>
-          {display?.map((it, i) => (
+          {rendered?.map((it, i) => (
             <motion.div
               key={it.key}
               layout
@@ -281,6 +297,12 @@ export default function Home() {
             </motion.div>
           ))}
         </AnimatePresence>
+
+        {display && visibleCount < display.length && (
+          <div ref={sentinelRef} className="py-2 text-center text-[11px] text-zinc-400">
+            {display.length - visibleCount} more…
+          </div>
+        )}
 
         {!itins && !loading && (
           <div className="mt-4 text-center text-sm text-zinc-400">
