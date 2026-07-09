@@ -56,7 +56,7 @@ export interface TransitLeg {
   alightStop: string;
   boardTime: number;
   alightTime: number;
-  stops: { name: string; lat: number; lon: number }[];
+  stops: { name: string; lat: number; lon: number; arr: number; dep: number }[];
   delaySeconds?: number;
 }
 

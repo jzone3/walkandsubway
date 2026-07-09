@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadTimetable } from "@/lib/timetable.server";
-import { route } from "@/lib/raptor";
+import { route, walkVariants } from "@/lib/raptor";
 import { Itinerary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
     }
     if (usedRoutes.size === 0) break;
     collect(route(tt, { ...base, maxAccessWalkSeconds: 25 * 60, banRouteIds: [...usedRoutes] }));
+  }
+  // walk-trading permutations: board farther along the line / get off early
+  for (const v of walkVariants(base, [...itineraries])) {
+    if (seen.has(v.key)) continue;
+    seen.add(v.key);
+    itineraries.push(v);
   }
   return NextResponse.json({ itineraries, computeMs: Date.now() - started });
 }

@@ -34,11 +34,13 @@ export function rankItineraries(
   const seenLines = new Set<string>();
   for (const { it } of scored) {
     if (seen.has(it.key)) continue;
-    // collapse near-duplicates that use the same line sequence
-    const lineSig = it.legs
+    // collapse near-duplicates: same line sequence AND similar walk amount
+    // (same lines with meaningfully different walking are distinct options)
+    const lines = it.legs
       .filter((l) => l.kind === "transit")
       .map((l) => l.routeId)
       .join(">") || "walk";
+    const lineSig = `${lines}#${Math.round(it.walkSeconds / 300)}`;
     if (seenLines.has(lineSig)) continue;
     seen.add(it.key);
     seenLines.add(lineSig);
