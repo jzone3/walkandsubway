@@ -3,8 +3,8 @@ import { Itinerary } from "./types";
 // slider: 0 = minimize walking, 100 = walkmaxx (walking is nearly free, transfers are painful)
 export function rankItineraries(itins: Itinerary[], slider: number, topN = 5): Itinerary[] {
   const s = Math.min(100, Math.max(0, slider)) / 100;
-  const walkWeight = 2.0 - 1.9 * s; // 2.0 -> 0.1
-  const transferPenalty = 120 + 2280 * s; // 2min -> 40min equivalent
+  const walkWeight = 1.8 - 1.25 * s; // 1.8 -> 0.55
+  const transferPenalty = 120 + 1880 * s; // 2min -> ~33min equivalent
   const scored = itins.map((it) => ({
     it,
     score:
@@ -16,9 +16,17 @@ export function rankItineraries(itins: Itinerary[], slider: number, topN = 5): I
   scored.sort((a, b) => a.score - b.score);
   const out: Itinerary[] = [];
   const seen = new Set<string>();
+  const seenLines = new Set<string>();
   for (const { it } of scored) {
     if (seen.has(it.key)) continue;
+    // collapse near-duplicates that use the same line sequence
+    const lineSig = it.legs
+      .filter((l) => l.kind === "transit")
+      .map((l) => l.routeId)
+      .join(">") || "walk";
+    if (seenLines.has(lineSig)) continue;
     seen.add(it.key);
+    seenLines.add(lineSig);
     out.push(it);
     if (out.length >= topN) break;
   }
