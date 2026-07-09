@@ -63,3 +63,17 @@ body {
 .walk-slider:active::-moz-range-thumb {
   transform: scale(1.15);
 }
+@media (pointer: coarse) {
+  .walk-slider {
+    height: 12px;
+    touch-action: pan-x;
+  }
+  .walk-slider::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .walk-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+}
