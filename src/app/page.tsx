@@ -241,7 +241,7 @@ export default function Home() {
         } h-full w-full flex-col gap-3 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] md:h-auto md:w-[440px] md:shrink-0 md:pb-4`}
       >
         <header className="relative">
-          <h1 className="text-xl font-bold tracking-tight">walkandsubway 🚶🚇</h1>
+          <h1 className="text-xl font-bold tracking-tight">Walk & Subway Routes 🚶🚇</h1>
           <p className="text-xs text-zinc-500">walkmaxxing</p>
           <button
             aria-label="copy share link"
