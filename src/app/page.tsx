@@ -74,13 +74,22 @@ export default function Home() {
         JSON.stringify({ origin, dest, slider, maxTransfers, avoidLines: [...avoidLines] })
       );
     } catch {}
+  }, [origin, dest, slider, maxTransfers, avoidLines]);
+
+  const [shareCopied, setShareCopied] = useState(false);
+  const share = useCallback(() => {
     const q = new URLSearchParams();
     if (origin) q.set("from", `${origin.label}|${origin.lat.toFixed(5)}|${origin.lon.toFixed(5)}`);
     if (dest) q.set("to", `${dest.label}|${dest.lat.toFixed(5)}|${dest.lon.toFixed(5)}`);
     q.set("s", String(slider));
     if (maxTransfers >= 0) q.set("xfer", String(maxTransfers));
     if (avoidLines.size > 0) q.set("avoid", [...avoidLines].join(","));
-    window.history.replaceState(null, "", `?${q.toString()}`);
+    void navigator.clipboard
+      .writeText(`${window.location.origin}/?${q.toString()}`)
+      .then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 1500);
+      });
   }, [origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
@@ -282,6 +291,13 @@ export default function Home() {
               }`}
             >
               ⚡ Smartpicks
+            </button>
+            <button
+              onClick={share}
+              disabled={!origin || !dest}
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-600 transition hover:border-sky-400 hover:text-sky-700 disabled:opacity-40"
+            >
+              {shareCopied ? "✓ copied" : "🔗 Share"}
             </button>
             <button
               onClick={go}
