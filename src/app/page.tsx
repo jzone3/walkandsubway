@@ -19,6 +19,7 @@ export default function Home() {
   const [slider, setSlider] = useState(50);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [maxTransfers, setMaxTransfers] = useState(-1); // -1 = no limit
+  const [avoidLines, setAvoidLines] = useState<Set<string>>(new Set());
   const [itins, setItins] = useState<Itinerary[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export default function Home() {
         if (s.dest) setDest(s.dest);
         if (typeof s.slider === "number") setSlider(s.slider);
         if (typeof s.maxTransfers === "number") setMaxTransfers(s.maxTransfers);
+        if (Array.isArray(s.avoidLines)) setAvoidLines(new Set(s.avoidLines));
       }
     } catch {}
   }, []);
@@ -53,10 +55,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         "walkmaxxing:lastSearch",
-        JSON.stringify({ origin, dest, slider, maxTransfers })
+        JSON.stringify({ origin, dest, slider, maxTransfers, avoidLines: [...avoidLines] })
       );
     } catch {}
-  }, [origin, dest, slider, maxTransfers]);
+  }, [origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
     fetch("/api/rt")
@@ -102,29 +104,46 @@ export default function Home() {
     if (origin && dest) void go();
   }, [origin, dest, go]);
 
-  const ranked = useMemo(
+  const allLines = useMemo(() => {
+    const m = new Map<string, { id: string; name: string; color: string }>();
+    for (const it of itins ?? [])
+      for (const l of it.legs)
+        if (l.kind === "transit" && !m.has(l.routeId))
+          m.set(l.routeId, { id: l.routeId, name: l.routeName, color: l.routeColor });
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  }, [itins]);
+  const usable = useMemo(
     () =>
       itins
-        ? rankItineraries(itins, slider, Infinity, maxTransfers >= 0 ? maxTransfers : undefined)
+        ? itins.filter(
+            (i) => !i.legs.some((l) => l.kind === "transit" && avoidLines.has(l.routeId))
+          )
         : null,
-    [itins, slider, maxTransfers]
+    [itins, avoidLines]
+  );
+  const ranked = useMemo(
+    () =>
+      usable
+        ? rankItineraries(usable, slider, Infinity, maxTransfers >= 0 ? maxTransfers : undefined)
+        : null,
+    [usable, slider, maxTransfers]
   );
   // smart pick: the most walking you can get while staying within ~8 min of
   // the fastest option; hidden once the user starts moving the slider
   const smartPick = useMemo(() => {
-    if (sliderTouched || !itins || itins.length === 0) return null;
-    const pool = maxTransfers >= 0 ? itins.filter((i) => i.transfers <= maxTransfers) : itins;
+    if (sliderTouched || !usable || usable.length === 0) return null;
+    const pool = maxTransfers >= 0 ? usable.filter((i) => i.transfers <= maxTransfers) : usable;
     if (pool.length === 0) return null;
     const fastest = Math.min(...pool.map((i) => i.totalSeconds));
     return pool
       .filter((i) => i.totalSeconds <= fastest + 8 * 60)
       .reduce((a, b) => (b.walkSeconds > a.walkSeconds ? b : a));
-  }, [itins, maxTransfers, sliderTouched]);
+  }, [usable, maxTransfers, sliderTouched]);
   // smartpicks: the walk/time frontier — routes where getting more walking
   // necessarily means a slower trip
   const smartPickKeys = useMemo(() => {
-    if (!itins) return new Set<string>();
-    const pool = maxTransfers >= 0 ? itins.filter((i) => i.transfers <= maxTransfers) : itins;
+    if (!usable) return new Set<string>();
+    const pool = maxTransfers >= 0 ? usable.filter((i) => i.transfers <= maxTransfers) : usable;
     const sorted = [...pool].sort((a, b) => a.totalSeconds - b.totalSeconds);
     const keys = new Set<string>();
     let maxWalk = -1;
@@ -135,10 +154,10 @@ export default function Home() {
       }
     }
     return keys;
-  }, [itins, maxTransfers]);
+  }, [usable, maxTransfers]);
   const display = useMemo(() => {
     if (!ranked) return null;
-    if (showStarred) return (itins ?? []).filter((i) => starred.has(i.key));
+    if (showStarred) return (usable ?? []).filter((i) => starred.has(i.key));
     if (showSmartPicks)
       return ranked
         .filter((i) => smartPickKeys.has(i.key))
@@ -152,7 +171,7 @@ export default function Home() {
     return list.sort(
       (a, b) => (a.key === smartPick?.key ? 0 : 1) - (b.key === smartPick?.key ? 0 : 1)
     );
-  }, [ranked, itins, smartPick, starred, showStarred, showSmartPicks, smartPickKeys]);
+  }, [ranked, usable, smartPick, starred, showStarred, showSmartPicks, smartPickKeys]);
   const toggleStar = useCallback((key: string) => {
     setStarred((prev) => {
       const next = new Set(prev);
@@ -227,11 +246,13 @@ export default function Home() {
               onClick={() => {
                 setShowSmartPicks((v) => !v);
                 setShowStarred(false);
+                setSlider(50);
+                setSliderTouched(false);
               }}
               disabled={!itins}
               className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-40 ${
                 showSmartPicks
-                  ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                  ? "border-emerald-500 bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-200"
                   : "border-zinc-300 bg-white text-zinc-600 hover:border-emerald-400 hover:text-emerald-700"
               }`}
             >
@@ -278,6 +299,34 @@ export default function Home() {
                   <option value={2}>≤ 2</option>
                 </select>
               </label>
+              {allLines.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-zinc-600">
+                  avoid lines
+                  {allLines.map((r) => {
+                    const off = avoidLines.has(r.id);
+                    return (
+                      <button
+                        key={r.id}
+                        aria-label={`${off ? "allow" : "avoid"} ${r.name}`}
+                        onClick={() =>
+                          setAvoidLines((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(r.id)) next.delete(r.id);
+                            else next.add(r.id);
+                            return next;
+                          })
+                        }
+                        className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-bold text-white transition ${
+                          off ? "opacity-25 line-through" : ""
+                        }`}
+                        style={{ backgroundColor: `#${r.color || "555"}` }}
+                      >
+                        {r.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
