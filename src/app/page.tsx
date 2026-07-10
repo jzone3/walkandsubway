@@ -38,6 +38,22 @@ export default function Home() {
     setDateStr(now.dateStr);
     setTimeStr(now.timeStr);
     try {
+      const q = new URLSearchParams(window.location.search);
+      const parsePlace = (v: string | null): Place | null => {
+        if (!v) return null;
+        const [label, lat, lon] = v.split("|");
+        return label && isFinite(+lat) && isFinite(+lon) ? { label, lat: +lat, lon: +lon } : null;
+      };
+      const from = parsePlace(q.get("from"));
+      const to = parsePlace(q.get("to"));
+      if (from || to) {
+        if (from) setOrigin(from);
+        if (to) setDest(to);
+        if (q.get("s") !== null) setSlider(+q.get("s")!);
+        if (q.get("xfer") !== null) setMaxTransfers(+q.get("xfer")!);
+        if (q.get("avoid")) setAvoidLines(new Set(q.get("avoid")!.split(",")));
+        return;
+      }
       const saved = localStorage.getItem("walkmaxxing:lastSearch");
       if (saved) {
         const s = JSON.parse(saved);
@@ -58,6 +74,13 @@ export default function Home() {
         JSON.stringify({ origin, dest, slider, maxTransfers, avoidLines: [...avoidLines] })
       );
     } catch {}
+    const q = new URLSearchParams();
+    if (origin) q.set("from", `${origin.label}|${origin.lat.toFixed(5)}|${origin.lon.toFixed(5)}`);
+    if (dest) q.set("to", `${dest.label}|${dest.lat.toFixed(5)}|${dest.lon.toFixed(5)}`);
+    q.set("s", String(slider));
+    if (maxTransfers >= 0) q.set("xfer", String(maxTransfers));
+    if (avoidLines.size > 0) q.set("avoid", [...avoidLines].join(","));
+    window.history.replaceState(null, "", `?${q.toString()}`);
   }, [origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
