@@ -11,26 +11,24 @@ export function rankItineraries(
     itins = itins.filter((it) => it.transfers <= maxTransfers);
   }
   const s = Math.min(100, Math.max(0, slider)) / 100;
-  // the slider picks a target amount of walking: leftmost = the least walking
-  // any option needs, rightmost = walking the whole way. The target is a
-  // quantile of the observed walk times (not a linear interpolation), so the
-  // options are spread uniformly across the slider even when walk times
-  // cluster near one end. Rank by how close each option's walk time is to
-  // the target, with total time breaking ties.
+  // the slider sets a total-trip-time budget: leftmost = only the fastest
+  // option, rightmost = every option no matter how long. The budget is a
+  // quantile of the observed total times so the options unlock uniformly
+  // across the slider. Within budget, the most walking wins (faster breaks
+  // ties); over-budget options follow, fastest first.
   if (itins.length === 0) return [];
-  const walks = [...new Set(itins.map((it) => it.walkSeconds))].sort((a, b) => a - b);
-  const pos = s * (walks.length - 1);
+  const totals = [...new Set(itins.map((it) => it.totalSeconds))].sort((a, b) => a - b);
+  const pos = s * (totals.length - 1);
   const lo = Math.floor(pos);
   const hi = Math.ceil(pos);
-  const target = walks[lo] + (walks[hi] - walks[lo]) * (pos - lo);
-  const scored = itins.map((it) => ({
-    it,
-    score:
-      Math.abs(it.walkSeconds - target) +
-      0.25 * it.totalSeconds +
-      it.transfers * 120,
-  }));
-  scored.sort((a, b) => a.score - b.score);
+  const budget = totals[lo] + (totals[hi] - totals[lo]) * (pos - lo);
+  const scored = itins.map((it) => ({ it, over: it.totalSeconds > budget }));
+  scored.sort((a, b) => {
+    if (a.over !== b.over) return a.over ? 1 : -1;
+    if (a.over) return a.it.totalSeconds - b.it.totalSeconds;
+    if (b.it.walkSeconds !== a.it.walkSeconds) return b.it.walkSeconds - a.it.walkSeconds;
+    return a.it.totalSeconds - b.it.totalSeconds;
+  });
   const out: Itinerary[] = [];
   const seen = new Set<string>();
   const seenLines = new Set<string>();
