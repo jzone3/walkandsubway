@@ -240,11 +240,18 @@ export default function Home() {
           mobileView === "map" ? "hidden md:flex" : "flex"
         } h-full w-full flex-col gap-3 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] md:h-auto md:w-[440px] md:shrink-0 md:pb-4`}
       >
-        <header>
-          <h1 className="text-xl font-bold tracking-tight">walkmaxxing 🚶🚇</h1>
-          <p className="text-xs text-zinc-500">
-            NYC transit routing where <em>you</em> pick the walking/transfer tradeoff
-          </p>
+        <header className="relative">
+          <h1 className="text-xl font-bold tracking-tight">walkandsubway 🚶🚇</h1>
+          <p className="text-xs text-zinc-500">walkmaxxing</p>
+          <button
+            aria-label="copy share link"
+            title={shareCopied ? "copied!" : "copy share link"}
+            onClick={share}
+            disabled={!origin || !dest}
+            className="absolute right-0 top-0 rounded-lg p-1.5 text-base text-zinc-400 transition hover:bg-zinc-100 hover:text-sky-600 disabled:opacity-30"
+          >
+            {shareCopied ? "✓" : "🔗"}
+          </button>
         </header>
 
         <div className="flex flex-col gap-2">
@@ -292,13 +299,7 @@ export default function Home() {
             >
               ⚡ Smartpicks
             </button>
-            <button
-              onClick={share}
-              disabled={!origin || !dest}
-              className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-600 transition hover:border-sky-400 hover:text-sky-700 disabled:opacity-40"
-            >
-              {shareCopied ? "✓ copied" : "🔗 Share"}
-            </button>
+
             <button
               onClick={go}
               disabled={!origin || !dest || loading}
