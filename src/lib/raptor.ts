@@ -288,6 +288,14 @@ function reconstruct(
         arr: trip.arr[p.alightPos + 1 + off],
         dep: trip.dep[p.alightPos + 1 + off],
       }));
+      // when's the next same-pattern trip from the board stop, if this one is missed?
+      const dayMask = 1 << req.dayBit;
+      let nextDep: number | undefined;
+      for (const t of pat.trips) {
+        if (!(tt.services[t.svc] & dayMask)) continue;
+        const d = t.dep[p.boardPos];
+        if (d > trip.dep[p.boardPos] && (nextDep === undefined || d < nextDep)) nextDep = d;
+      }
       const leg: TransitLeg = {
         kind: "transit",
         routeId: routeInfo.id,
@@ -301,6 +309,7 @@ function reconstruct(
         alightTime: trip.arr[p.alightPos],
         stops: stopsAlong,
         next: nextStops.length > 0 ? nextStops : undefined,
+        headwaySecs: nextDep !== undefined ? nextDep - trip.dep[p.boardPos] : undefined,
       };
       legs.unshift(leg);
       transitLegs.unshift(leg);

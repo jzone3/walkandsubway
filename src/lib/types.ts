@@ -60,6 +60,8 @@ export interface TransitLeg {
   // stops the trip continues to after the alight stop (for overshoot variants);
   // stripped before responses
   next?: { name: string; lat: number; lon: number; arr: number; dep: number }[];
+  // seconds until the next trip on this line from the board stop
+  headwaySecs?: number;
   delaySeconds?: number;
 }
 

@@ -1,5 +1,5 @@
 "use client";
-import { Itinerary } from "@/lib/types";
+import { Itinerary, TransitLeg } from "@/lib/types";
 import { fmtClock, fmtDuration } from "@/lib/time";
 
 function RouteBullet({ name, color }: { name: string; color: string }) {
@@ -33,6 +33,9 @@ export default function ItineraryCard({
   onClick: () => void;
 }) {
   const walkPct = Math.round((it.walkSeconds / Math.max(1, it.totalSeconds)) * 100);
+  const transits = it.legs.filter((l): l is TransitLeg => l.kind === "transit");
+  const firstTransit = transits[0];
+  const lastTransit = transits[transits.length - 1];
   const maxDelay = Math.max(
     0,
     ...it.legs.filter((l) => l.kind === "transit").map((l) => delays[l.routeId] ?? 0)
@@ -112,6 +115,14 @@ export default function ItineraryCard({
             ) : null
           )}
         </span>
+        {firstTransit && (
+          <>
+            <span className="text-zinc-400">·</span>
+            <span className="text-zinc-500">
+              {firstTransit.boardStop} → {lastTransit.alightStop}
+            </span>
+          </>
+        )}
         <span className="text-zinc-400">·</span>
         <span>
           {it.transfers} transfer{it.transfers === 1 ? "" : "s"}
@@ -119,6 +130,11 @@ export default function ItineraryCard({
         <span className="text-zinc-400">·</span>
         <span>{walkPct}% walking</span>
         {it.waitSeconds > 60 && <span>⏳ {fmtDuration(it.waitSeconds)} wait</span>}
+        {firstTransit?.headwaySecs !== undefined && (
+          <span className="text-zinc-400">
+            🕒 next {firstTransit.routeName} in {Math.round(firstTransit.headwaySecs / 60)} min
+          </span>
+        )}
         {maxDelay > 90 && (
           <span className="font-medium text-amber-600">⚠ +{Math.round(maxDelay / 60)} min delays</span>
         )}
@@ -136,6 +152,9 @@ export default function ItineraryCard({
                 <span>
                   {l.boardStop} → {l.alightStop} · {fmtClock(l.boardTime)}–{fmtClock(l.alightTime)} ·{" "}
                   {l.stops.length - 1} stops
+                  {l.headwaySecs !== undefined && (
+                    <span className="text-zinc-400"> · next in {Math.round(l.headwaySecs / 60)} min</span>
+                  )}
                   {(delays[l.routeId] ?? 0) > 90 && (
                     <span className="text-amber-600"> · running +{Math.round((delays[l.routeId] ?? 0) / 60)} min late</span>
                   )}

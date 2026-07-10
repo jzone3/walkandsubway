@@ -142,7 +142,11 @@ export default function Home() {
     if (showSmartPicks)
       return ranked
         .filter((i) => smartPickKeys.has(i.key))
-        .sort((a, b) => a.totalSeconds - b.totalSeconds);
+        .sort((a, b) => {
+          if (a.key === smartPick?.key) return -1;
+          if (b.key === smartPick?.key) return 1;
+          return a.totalSeconds - b.totalSeconds;
+        });
     const list = [...ranked];
     if (smartPick && !list.some((i) => i.key === smartPick.key)) list.unshift(smartPick);
     return list.sort(
@@ -191,8 +195,22 @@ export default function Home() {
         </header>
 
         <div className="flex flex-col gap-2">
-          <LocationInput placeholder="From (e.g. home address)" value={origin} onSelect={setOrigin} />
-          <LocationInput placeholder="To (e.g. office address)" value={dest} onSelect={setDest} />
+          <div className="relative flex flex-col gap-2">
+            <LocationInput placeholder="From (e.g. home address)" value={origin} onSelect={setOrigin} />
+            <LocationInput placeholder="To (e.g. office address)" value={dest} onSelect={setDest} />
+            <button
+              aria-label="flip directions"
+              onClick={() => {
+                const o = origin;
+                setOrigin(dest);
+                setDest(o);
+              }}
+              disabled={!origin && !dest}
+              className="absolute right-8 top-1/2 z-10 -translate-y-1/2 rounded-full border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-500 shadow-sm transition hover:border-zinc-400 hover:text-zinc-800 disabled:opacity-40"
+            >
+              ⇅
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAdvanced((v) => !v)}
