@@ -373,6 +373,7 @@ export default function Home() {
           )}
         </div>
 
+        {!showSmartPicks && (
         <div className="rounded-xl border border-zinc-200 bg-white p-3">
           <div className="mb-1 flex items-center justify-between text-xs font-medium text-zinc-600">
             <span>🚇 fewest steps</span>
@@ -383,18 +384,17 @@ export default function Home() {
             min={0}
             max={100}
             value={slider}
-            disabled={showSmartPicks}
             onChange={(e) => {
               setSlider(+e.target.value);
               setSliderTouched(true);
-              setShowSmartPicks(false);
             }}
-            className="walk-slider w-full disabled:cursor-not-allowed disabled:opacity-40"
+            className="walk-slider w-full"
           />
           <p className="mt-1 text-[11px] text-zinc-400">
             Slide right to allow a longer trip — the most walking within that time shows first.
           </p>
         </div>
+        )}
 
         {loading && (
           <div className="text-center text-[11px] text-zinc-400">
