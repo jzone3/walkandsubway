@@ -62,8 +62,13 @@ body {
   transform: scale(1.15);
 }
 @media (pointer: coarse) {
+  /* taller hit area for touch; the visible track stays a thin stripe */
   .walk-slider {
     height: 12px;
+    box-sizing: content-box;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    background-clip: padding-box;
     touch-action: pan-x;
   }
   .walk-slider::-webkit-slider-thumb {

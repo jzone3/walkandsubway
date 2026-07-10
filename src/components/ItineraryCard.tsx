@@ -56,7 +56,7 @@ export default function ItineraryCard({
         </div>
       )}
       <div className="flex items-end justify-between gap-2">
-        <div className="flex items-end gap-3">
+        <div className="flex min-w-0 flex-wrap items-end gap-3">
           <div>
             <div className="whitespace-nowrap text-xl font-bold leading-none">{fmtDuration(it.totalSeconds)}</div>
             <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">total</div>
@@ -97,8 +97,9 @@ export default function ItineraryCard({
           >
             {starred ? "★" : "☆"}
           </span>
-          <div className="whitespace-nowrap text-xs text-zinc-500">
-            {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
+          <div className="text-right text-xs text-zinc-500">
+            <span className="whitespace-nowrap">{fmtClock(it.departTime)}</span> →{" "}
+            <span className="whitespace-nowrap">{fmtClock(it.arriveTime)}</span>
           </div>
           <div className="text-xs text-zinc-400">#{rank}</div>
         </div>

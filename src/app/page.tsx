@@ -248,7 +248,7 @@ export default function Home() {
             title={shareCopied ? "copied!" : "copy share link"}
             onClick={share}
             disabled={!origin || !dest}
-            className="absolute right-0 top-0 rounded-lg p-1.5 text-base text-zinc-400 transition hover:bg-zinc-100 hover:text-sky-600 disabled:opacity-30"
+            className="absolute right-0 top-0 rounded-lg p-2.5 text-base text-zinc-400 transition hover:bg-zinc-100 hover:text-sky-600 disabled:opacity-30 md:p-1.5"
           >
             {shareCopied ? "✓" : "🔗"}
           </button>
@@ -266,7 +266,7 @@ export default function Home() {
                 setDest(o);
               }}
               disabled={!origin && !dest}
-              className="absolute right-8 top-1/2 z-10 -translate-y-1/2 rounded-full border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-500 shadow-sm transition hover:border-zinc-400 hover:text-zinc-800 disabled:opacity-40"
+              className="absolute right-8 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-300 bg-white text-base text-zinc-500 shadow-sm transition hover:border-zinc-400 hover:text-zinc-800 disabled:opacity-40 md:h-8 md:w-8 md:text-sm"
             >
               ⇅
             </button>
@@ -358,7 +358,7 @@ export default function Home() {
                             return next;
                           })
                         }
-                        className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-bold text-white transition ${
+                        className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white transition md:h-6 md:min-w-6 md:px-1 ${
                           off ? "opacity-25 line-through" : ""
                         }`}
                         style={{ backgroundColor: `#${r.color || "555"}` }}
@@ -484,7 +484,7 @@ export default function Home() {
             href="https://devin.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-zinc-600 opacity-80 transition hover:opacity-100"
+            className="inline-flex items-center gap-1 py-2 font-medium text-zinc-600 opacity-80 transition hover:opacity-100"
           >
             <Image src="/devin-mark.svg" alt="" width={16} height={16} className="h-4 w-4" />
             Devin
