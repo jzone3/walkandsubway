@@ -373,6 +373,7 @@ export default function Home() {
           )}
         </div>
 
+        {!showSmartPicks && (
         <div className="rounded-xl border border-zinc-200 bg-white p-3">
           <div className="mb-1 flex items-center justify-between text-xs font-medium text-zinc-600">
             <span>🚇 fewest steps</span>
@@ -395,6 +396,7 @@ export default function Home() {
             Slide right to allow a longer trip — the most walking within that time shows first.
           </p>
         </div>
+        )}
 
         {loading && (
           <div className="text-center text-[11px] text-zinc-400">
