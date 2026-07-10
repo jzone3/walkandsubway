@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 export interface Place {
   label: string;
+  sublabel?: string;
   lat: number;
   lon: number;
 }
@@ -114,7 +115,10 @@ export default function LocationInput({
                   setOpen(false);
                 }}
               >
-                {r.label}
+                <span className="block">{r.label}</span>
+                {r.sublabel && (
+                  <span className="block text-xs text-zinc-400">{r.sublabel}</span>
+                )}
               </button>
             </li>
           ))}

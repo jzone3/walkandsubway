@@ -34,13 +34,21 @@ export async function GET(req: NextRequest) {
     })
     .map((f) => {
       const p = f.properties;
+      const address = [p.housenumber, p.street].filter(Boolean).join(" ");
       const parts = [
-        p.name ?? [p.housenumber, p.street].filter(Boolean).join(" "),
+        p.name ?? address,
         p.district && p.district !== p.name ? p.district : p.city,
         p.state,
       ].filter(Boolean);
+      const sublabel =
+        p.name && address
+          ? [address, p.district && p.district !== p.name ? p.district : p.city]
+              .filter(Boolean)
+              .join(", ")
+          : undefined;
       return {
         label: parts.join(", "),
+        sublabel,
         lat: f.geometry.coordinates[1],
         lon: f.geometry.coordinates[0],
       };
