@@ -6,7 +6,7 @@ export function rankItineraries(
   slider: number,
   topN = 5,
   maxTransfers?: number
-): Itinerary[] {
+): { list: Itinerary[]; budget: number } {
   if (maxTransfers !== undefined && maxTransfers >= 0) {
     itins = itins.filter((it) => it.transfers <= maxTransfers);
   }
@@ -16,7 +16,7 @@ export function rankItineraries(
   // quantile of the observed total times so the options unlock uniformly
   // across the slider. Within budget, the most walking wins (faster breaks
   // ties); over-budget options follow, fastest first.
-  if (itins.length === 0) return [];
+  if (itins.length === 0) return { list: [], budget: 0 };
   const totals = [...new Set(itins.map((it) => it.totalSeconds))].sort((a, b) => a - b);
   const pos = s * (totals.length - 1);
   const lo = Math.floor(pos);
@@ -48,5 +48,5 @@ export function rankItineraries(
     out.push(it);
     if (out.length >= topN) break;
   }
-  return out;
+  return { list: out, budget };
 }

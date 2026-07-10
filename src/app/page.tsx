@@ -144,13 +144,15 @@ export default function Home() {
         : null,
     [itins, avoidLines]
   );
-  const ranked = useMemo(
+  const rankedRes = useMemo(
     () =>
       usable
         ? rankItineraries(usable, slider, Infinity, maxTransfers >= 0 ? maxTransfers : undefined)
         : null,
     [usable, slider, maxTransfers]
   );
+  const ranked = rankedRes?.list ?? null;
+  const budget = rankedRes?.budget ?? null;
   // smart pick: the most walking you can get while staying within ~8 min of
   // the fastest option; hidden once the user starts moving the slider
   const smartPick = useMemo(() => {
@@ -406,7 +408,17 @@ export default function Home() {
         )}
 
         <AnimatePresence mode="popLayout" initial={false}>
-          {rendered?.map((it, i) => (
+          {rendered?.map((it, i) => {
+            const showDivider =
+              !showStarred &&
+              !showSmartPicks &&
+              budget !== null &&
+              it.totalSeconds > budget &&
+              it.key !== smartPick?.key &&
+              (i === 0 ||
+                rendered[i - 1].totalSeconds <= budget ||
+                rendered[i - 1].key === smartPick?.key);
+            return (
             <motion.div
               key={it.key}
               layout
@@ -415,6 +427,13 @@ export default function Home() {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 32 }}
             >
+              {showDivider && (
+                <div className="mb-3 flex items-center gap-2 text-[11px] text-zinc-400">
+                  <div className="h-px flex-1 bg-zinc-200" />
+                  all other permutations, fastest first
+                  <div className="h-px flex-1 bg-zinc-200" />
+                </div>
+              )}
               <ItineraryCard
                 it={it}
                 rank={i + 1}
@@ -426,7 +445,8 @@ export default function Home() {
                 onClick={() => setSelectedKey(it.key)}
               />
             </motion.div>
-          ))}
+            );
+          })}
         </AnimatePresence>
 
         {display && visibleCount < display.length && (
