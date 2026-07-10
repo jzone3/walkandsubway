@@ -21,7 +21,20 @@ const destIcon = L.divIcon({
 function FitBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length >= 2) map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+    const fit = () => {
+      const size = map.getSize();
+      if (size.x > 0 && size.y > 0 && points.length >= 2)
+        map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+    };
+    fit();
+    // the map container can be hidden (display:none) on mobile and later
+    // revealed; Leaflet needs invalidateSize + a refit when that happens
+    const obs = new ResizeObserver(() => {
+      map.invalidateSize();
+      fit();
+    });
+    obs.observe(map.getContainer());
+    return () => obs.disconnect();
   }, [map, points]);
   return null;
 }

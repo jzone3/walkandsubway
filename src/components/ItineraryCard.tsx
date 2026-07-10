@@ -1,5 +1,5 @@
 "use client";
-import { Itinerary } from "@/lib/types";
+import { Itinerary, TransitLeg } from "@/lib/types";
 import { fmtClock, fmtDuration } from "@/lib/time";
 
 function RouteBullet({ name, color }: { name: string; color: string }) {
@@ -33,6 +33,9 @@ export default function ItineraryCard({
   onClick: () => void;
 }) {
   const walkPct = Math.round((it.walkSeconds / Math.max(1, it.totalSeconds)) * 100);
+  const transits = it.legs.filter((l): l is TransitLeg => l.kind === "transit");
+  const firstTransit = transits[0];
+  const lastTransit = transits[transits.length - 1];
   const maxDelay = Math.max(
     0,
     ...it.legs.filter((l) => l.kind === "transit").map((l) => delays[l.routeId] ?? 0)
@@ -49,11 +52,11 @@ export default function ItineraryCard({
     >
       {smartPick && (
         <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-          ⚡ smart pick · most walking within 5 min of fastest
+          ⚡ smart pick · most walking within 8 min of fastest
         </div>
       )}
       <div className="flex items-end justify-between gap-2">
-        <div className="flex items-end gap-3">
+        <div className="flex min-w-0 flex-wrap items-end gap-3">
           <div>
             <div className="whitespace-nowrap text-xl font-bold leading-none">{fmtDuration(it.totalSeconds)}</div>
             <div className="mt-1 text-[10px] uppercase tracking-wide text-zinc-400">total</div>
@@ -88,14 +91,15 @@ export default function ItineraryCard({
                 onStar();
               }
             }}
-            className={`-mr-1 -mt-1 px-1 text-lg leading-none transition hover:scale-110 ${
+            className={`-mr-2 -mt-2 p-2 text-lg leading-none transition hover:scale-110 ${
               starred ? "text-amber-400" : "text-zinc-300 hover:text-amber-400"
             }`}
           >
             {starred ? "★" : "☆"}
           </span>
-          <div className="whitespace-nowrap text-xs text-zinc-500">
-            {fmtClock(it.departTime)} → {fmtClock(it.arriveTime)}
+          <div className="text-right text-xs text-zinc-500">
+            <span className="whitespace-nowrap">{fmtClock(it.departTime)}</span> →{" "}
+            <span className="whitespace-nowrap">{fmtClock(it.arriveTime)}</span>
           </div>
           <div className="text-xs text-zinc-400">#{rank}</div>
         </div>
@@ -112,6 +116,14 @@ export default function ItineraryCard({
             ) : null
           )}
         </span>
+        {firstTransit && (
+          <>
+            <span className="text-zinc-400">·</span>
+            <span className="text-zinc-500">
+              {firstTransit.boardStop} → {lastTransit.alightStop}
+            </span>
+          </>
+        )}
         <span className="text-zinc-400">·</span>
         <span>
           {it.transfers} transfer{it.transfers === 1 ? "" : "s"}
@@ -119,6 +131,11 @@ export default function ItineraryCard({
         <span className="text-zinc-400">·</span>
         <span>{walkPct}% walking</span>
         {it.waitSeconds > 60 && <span>⏳ {fmtDuration(it.waitSeconds)} wait</span>}
+        {firstTransit?.headwaySecs !== undefined && (
+          <span className="text-zinc-400">
+            🕒 next {firstTransit.routeName} in {Math.round(firstTransit.headwaySecs / 60)} min
+          </span>
+        )}
         {maxDelay > 90 && (
           <span className="font-medium text-amber-600">⚠ +{Math.round(maxDelay / 60)} min delays</span>
         )}
@@ -136,6 +153,9 @@ export default function ItineraryCard({
                 <span>
                   {l.boardStop} → {l.alightStop} · {fmtClock(l.boardTime)}–{fmtClock(l.alightTime)} ·{" "}
                   {l.stops.length - 1} stops
+                  {l.headwaySecs !== undefined && (
+                    <span className="text-zinc-400"> · next in {Math.round(l.headwaySecs / 60)} min</span>
+                  )}
                   {(delays[l.routeId] ?? 0) > 90 && (
                     <span className="text-amber-600"> · running +{Math.round((delays[l.routeId] ?? 0) / 60)} min late</span>
                   )}

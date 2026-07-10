@@ -12,11 +12,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* the app is designed light-only; keep it light even when the OS is in dark mode */
+:root {
+  color-scheme: light only;
 }
 
 body {
@@ -62,4 +60,28 @@ body {
 .walk-slider::-moz-range-thumb:hover,
 .walk-slider:active::-moz-range-thumb {
   transform: scale(1.15);
+}
+@media (pointer: coarse) {
+  /* taller hit area for touch; the visible track stays a thin stripe */
+  .walk-slider {
+    height: 12px;
+    box-sizing: content-box;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    background-clip: padding-box;
+    touch-action: pan-x;
+  }
+  .walk-slider::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .walk-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
 }
