@@ -384,13 +384,11 @@ export default function Home() {
             min={0}
             max={100}
             value={slider}
-            disabled={showSmartPicks}
             onChange={(e) => {
               setSlider(+e.target.value);
               setSliderTouched(true);
-              setShowSmartPicks(false);
             }}
-            className="walk-slider w-full disabled:cursor-not-allowed disabled:opacity-40"
+            className="walk-slider w-full"
           />
           <p className="mt-1 text-[11px] text-zinc-400">
             Slide right to allow a longer trip — the most walking within that time shows first.
