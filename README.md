@@ -1,5 +1,7 @@
 # walkmaxxing 🚶🚇
 
+[![Built by Devin](https://raw.githubusercontent.com/club-cog/built-by-devin/main/badges/built-by-devin.svg)](https://devin.ai)
+
 NYC transit routing where **you** pick the walking/transfer tradeoff. Google Maps optimizes for less walking but more transfers; this app has a slider — slide right to trade subway transfers for more walking, and the top-5 routes re-rank live.
 
 Inspired by [this tweet](https://x.com/heshie/status/2075008914970509522).
