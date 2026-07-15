@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadTimetable } from "@/lib/timetable.server";
 import { route, walkVariants } from "@/lib/raptor";
 import { Itinerary } from "@/lib/types";
+import { getPedestrianRouter } from "@/lib/pedestrian/openrouteservice.server";
+import { hydrateWalkingGeometry } from "@/lib/pedestrian/hydrate";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -51,6 +53,14 @@ export async function POST(req: NextRequest) {
   // trip-continuation data is only needed for variant generation
   for (const it of itineraries) {
     for (const l of it.legs) if (l.kind === "transit") delete l.next;
+  }
+  const pedestrianRouter = getPedestrianRouter();
+  if (pedestrianRouter) {
+    try {
+      await hydrateWalkingGeometry(pedestrianRouter, itineraries);
+    } catch {
+      // pedestrian routing is an enhancement; never fail the search
+    }
   }
   return NextResponse.json({ itineraries, computeMs: Date.now() - started });
 }

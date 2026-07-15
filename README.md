@@ -27,6 +27,21 @@ npm run dev
 
 MTA publishes new schedules a few times a year (current feed valid through the date in `feed_info.txt`). Run `npm run build-data` and commit the updated `data/` files.
 
+## Walking geometry (optional)
+
+Walk legs can follow real streets and paths instead of straight lines, using
+the [openrouteservice](https://openrouteservice.org) pedestrian router.
+
+1. Create a free account at [account.heigit.org](https://account.heigit.org)
+   and copy your API key (check your plan's daily request quota on the
+   dashboard — the free tier is limited).
+2. Set `ORS_API_KEY` in `.env.local` (see `.env.example`).
+
+Without a key, everything works exactly as before: walking times are estimated
+from straight-line distance and walk legs render as direct lines. Provider
+outages degrade to the same fallback per leg (`routingSource: "estimate"`).
+The API key stays server-side and is never sent to the browser.
+
 ---
 
 Built by [Devin](https://devin.ai)

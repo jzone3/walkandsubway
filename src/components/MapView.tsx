@@ -54,8 +54,10 @@ export default function MapView({
     if (dest) pts.push([dest.lat, dest.lon]);
     if (itinerary) {
       for (const l of itinerary.legs) {
-        if (l.kind === "walk") pts.push([l.fromLat, l.fromLon], [l.toLat, l.toLon]);
-        else for (const s of l.stops) pts.push([s.lat, s.lon]);
+        if (l.kind === "walk") {
+          if (l.geometry && l.geometry.length >= 2) pts.push(...l.geometry);
+          else pts.push([l.fromLat, l.fromLon], [l.toLat, l.toLon]);
+        } else for (const s of l.stops) pts.push([s.lat, s.lon]);
       }
     }
     return pts;
@@ -77,27 +79,28 @@ export default function MapView({
       {dest && <Marker position={[dest.lat, dest.lon]} icon={destIcon}><Tooltip>Destination</Tooltip></Marker>}
       {itinerary?.legs.map((l, i) =>
         l.kind === "walk" ? (
-          // dotted lines are for actual walking (access/egress); transfer walks
-          // between stations are shown as dots on the route instead
-          i === 0 || i === itinerary.legs.length - 1 ? (
-            <Polyline
-              key={`${itinerary.key}-${i}-walk-dotted`}
-              positions={[
-                [l.fromLat, l.fromLon],
-                [l.toLat, l.toLon],
-              ]}
-              pathOptions={{ color: "#555", weight: 3, dashArray: "4 7" }}
-            />
-          ) : (
-            <Polyline
-              key={`${itinerary.key}-${i}-walk`}
-              positions={[
-                [l.fromLat, l.fromLon],
-                [l.toLat, l.toLon],
-              ]}
-              pathOptions={{ color: "#555", weight: 5, opacity: 0.9 }}
-            />
-          )
+          (() => {
+            const positions: [number, number][] =
+              l.geometry && l.geometry.length >= 2
+                ? l.geometry
+                : [
+                    [l.fromLat, l.fromLon],
+                    [l.toLat, l.toLon],
+                  ];
+            return i === 0 || i === itinerary.legs.length - 1 ? (
+              <Polyline
+                key={`${itinerary.key}-${i}-walk-dotted`}
+                positions={positions}
+                pathOptions={{ color: "#555", weight: 3, dashArray: "4 7" }}
+              />
+            ) : (
+              <Polyline
+                key={`${itinerary.key}-${i}-walk`}
+                positions={positions}
+                pathOptions={{ color: "#555", weight: 5, opacity: 0.9 }}
+              />
+            );
+          })()
         ) : (
           <Polyline
             key={`${itinerary.key}-${i}-transit`}
