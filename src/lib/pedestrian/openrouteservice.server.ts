@@ -52,6 +52,8 @@ export class OpenRouteServiceRouter implements PedestrianRouter {
     _sources: Coordinate[],
     _destinations: Coordinate[]
   ): Promise<PedestrianMatrix> {
+    void _sources;
+    void _destinations;
     throw new Error("matrix() is not implemented in PR 1");
   }
 }
