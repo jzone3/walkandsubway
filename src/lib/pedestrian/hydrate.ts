@@ -32,11 +32,25 @@ function isDirectWalkItinerary(it: Itinerary): boolean {
   return it.legs.length === 1 && it.legs[0].kind === "walk";
 }
 
-export function collectTargets(itineraries: Itinerary[]): HydrationTarget[] {
+/** Pre-hydration seconds/meters for a walk leg, keyed by object identity. */
+export type LegSnapshot = { seconds: number; meters: number };
+export type LegSnapshotMap = WeakMap<WalkLeg, LegSnapshot>;
+
+export function collectTargets(
+  itineraries: Itinerary[],
+  snapshot?: LegSnapshotMap
+): HydrationTarget[] {
   const byKey = new Map<string, HydrationTarget>();
 
   const add = (leg: WalkLeg, isDirectWalk: boolean) => {
     if (leg.meters < MIN_HYDRATION_METERS) return;
+    // Snapshot the pre-hydration values on first sight of this leg object.
+    // walkVariants (raptor.ts) reuses walk-leg objects across itineraries;
+    // without this, a shared leg's delta would compute to 0 for every
+    // itinerary after the first once applyPathToLeg mutates leg.seconds.
+    if (snapshot && !snapshot.has(leg)) {
+      snapshot.set(leg, { seconds: leg.seconds, meters: leg.meters });
+    }
     const from = { lat: leg.fromLat, lon: leg.fromLon };
     const to = { lat: leg.toLat, lon: leg.toLon };
     const key = walkPairKey(from, to, PROVIDER);
@@ -126,7 +140,8 @@ export async function hydrateWalkingGeometry(
   const cache = opts.cache ?? defaultCache;
   const now = opts.now ?? Date.now;
 
-  const targets = collectTargets(itineraries);
+  const snapshot: LegSnapshotMap = new WeakMap();
+  const targets = collectTargets(itineraries, snapshot);
   const paths = new Map<string, PedestrianPath>();
   const misses: HydrationTarget[] = [];
   for (const t of targets) {
@@ -161,15 +176,21 @@ export async function hydrateWalkingGeometry(
     Array.from({ length: MAX_CONCURRENT_DIRECTIONS }, () => worker())
   );
 
-  for (const it of itineraries) applyPaths(it, paths);
+  for (const it of itineraries) applyPaths(it, paths, snapshot);
 }
 
 /** Write a routed path into a leg; returns seconds delta, or null if not routed. */
 function applyPathToLeg(
   leg: WalkLeg,
-  paths: Map<string, PedestrianPath>
+  paths: Map<string, PedestrianPath>,
+  snapshot: LegSnapshotMap
 ): number | null {
-  if (leg.meters < MIN_HYDRATION_METERS) return null; // never a target
+  // Compute against the pre-hydration snapshot, not the (possibly already
+  // mutated) live leg: walkVariants shares walk-leg objects across
+  // itineraries, and a leg already hydrated by an earlier itinerary in this
+  // same batch would otherwise yield a zeroed delta here.
+  const original = snapshot.get(leg) ?? { seconds: leg.seconds, meters: leg.meters };
+  if (original.meters < MIN_HYDRATION_METERS) return null; // never a target
   const key = walkPairKey(
     { lat: leg.fromLat, lon: leg.fromLon },
     { lat: leg.toLat, lon: leg.toLon },
@@ -180,7 +201,7 @@ function applyPathToLeg(
     leg.routingSource = "estimate";
     return null;
   }
-  const delta = path.seconds - leg.seconds;
+  const delta = path.seconds - original.seconds;
   leg.geometry = path.geometry;
   leg.seconds = path.seconds;
   leg.meters = path.meters;
@@ -188,19 +209,23 @@ function applyPathToLeg(
   return delta;
 }
 
-function applyPaths(it: Itinerary, paths: Map<string, PedestrianPath>): void {
+function applyPaths(
+  it: Itinerary,
+  paths: Map<string, PedestrianPath>,
+  snapshot: LegSnapshotMap
+): void {
   if (isDirectWalkItinerary(it)) {
     const leg = it.legs[0] as WalkLeg;
-    const delta = applyPathToLeg(leg, paths);
+    const delta = applyPathToLeg(leg, paths, snapshot);
     if (delta !== null) recomputeDirectWalk(it, leg.seconds);
     return;
   }
   let accessDelta = 0;
   let egressDelta = 0;
   const first = it.legs[0];
-  if (first?.kind === "walk") accessDelta = applyPathToLeg(first, paths) ?? 0;
+  if (first?.kind === "walk") accessDelta = applyPathToLeg(first, paths, snapshot) ?? 0;
   const last = it.legs[it.legs.length - 1];
-  if (last?.kind === "walk") egressDelta = applyPathToLeg(last, paths) ?? 0;
+  if (last?.kind === "walk") egressDelta = applyPathToLeg(last, paths, snapshot) ?? 0;
   if (accessDelta !== 0 || egressDelta !== 0) {
     recomputeTiming(it, accessDelta, egressDelta);
   }

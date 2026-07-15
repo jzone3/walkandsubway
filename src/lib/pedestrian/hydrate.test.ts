@@ -357,6 +357,33 @@ describe("hydrateWalkingGeometry", () => {
     expect(legs.some((l) => l.routingSource === "estimate")).toBe(true);
   });
 
+  it("shifts departTime on BOTH itineraries that share the same access-leg object", async () => {
+    // raptor's walkVariants reuses the base itinerary's access walk leg
+    // object (e.g. `...it.legs.slice(firstIdx + 1)`) across variants —
+    // model that exactly: one WalkLeg object, two itineraries.
+    const sharedAccess = walkLeg({ seconds: 600 }); // estimate 600s
+    const base = itinerary([sharedAccess, transitLeg()], {
+      departTime: 31800,
+      arriveTime: 33400,
+      key: "base",
+    });
+    const variant = itinerary([sharedAccess, transitLeg()], {
+      departTime: 31800,
+      arriveTime: 33400,
+      key: "variant",
+    });
+    const router = fakeRouter(async () => fakePath(840)); // +240s vs estimate
+    await hydrateWalkingGeometry(router, [base, variant], {
+      cache: new LruCache(10, 100000),
+    });
+    expect(sharedAccess.seconds).toBe(840);
+    expect(base.departTime).toBe(31800 - 240);
+    // second itinerary shares the same (already-mutated) leg object; its
+    // delta must still be computed against the original 600s estimate.
+    expect(variant.departTime).toBe(31800 - 240);
+    expect(variant.totalSeconds).toBe(variant.arriveTime - variant.departTime);
+  });
+
   it("never rejects even if the router throws synchronously", async () => {
     const it1 = itinerary([walkLeg(), transitLeg()]);
     const router = {
