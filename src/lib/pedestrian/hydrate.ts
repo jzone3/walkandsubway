@@ -53,3 +53,39 @@ export function collectTargets(itineraries: Itinerary[]): HydrationTarget[] {
     return b.refCount - a.refCount;
   });
 }
+
+/**
+ * Delta-based recompute anchored on pre-hydration values. Never re-derive
+ * from transit-leg times: RAPTOR's arriveTime includes hidden in-station
+ * transfer time after the last transit leg, and same-named-station transfer
+ * walks are deliberately omitted from legs.
+ *
+ * Known PR 1 limitation (documented in the spec): a positive access delta
+ * can push departTime before the requested departure. We keep the honest
+ * recomputed time — re-selecting a later trip requires feeding routed
+ * durations into RAPTOR, which is PR 2.
+ */
+export function recomputeTiming(
+  it: Itinerary,
+  accessDeltaSeconds: number,
+  egressDeltaSeconds: number
+): void {
+  it.departTime -= accessDeltaSeconds;
+  it.arriveTime += egressDeltaSeconds;
+  it.walkSeconds = it.legs
+    .filter((l): l is WalkLeg => l.kind === "walk")
+    .reduce((sum, l) => sum + l.seconds, 0);
+  it.totalSeconds = it.arriveTime - it.departTime;
+  it.waitSeconds = Math.max(
+    0,
+    it.totalSeconds - it.walkSeconds - it.rideSeconds
+  );
+}
+
+/** The directions response is canonical for the walk-only itinerary. */
+export function recomputeDirectWalk(it: Itinerary, routedSeconds: number): void {
+  it.arriveTime = it.departTime + routedSeconds;
+  it.walkSeconds = routedSeconds;
+  it.totalSeconds = routedSeconds;
+  it.waitSeconds = 0;
+}

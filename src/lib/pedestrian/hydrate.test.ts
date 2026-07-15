@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Itinerary, WalkLeg, TransitLeg } from "@/lib/types";
-import { collectTargets } from "./hydrate";
+import { collectTargets, recomputeDirectWalk, recomputeTiming } from "./hydrate";
 
 export function walkLeg(overrides: Partial<WalkLeg> = {}): WalkLeg {
   return {
@@ -115,5 +115,78 @@ describe("collectTargets", () => {
     const it1 = itinerary([transitLeg(), walkLeg()]);
     const targets = collectTargets([it1]);
     expect(targets.length).toBe(1); // egress only, no access
+  });
+});
+
+describe("recomputeTiming", () => {
+  it("shifts departTime back by the access delta and arriveTime forward by the egress delta", () => {
+    const access = walkLeg({ seconds: 840 }); // routed: was 600
+    const egress = walkLeg({
+      seconds: 500, // routed: was 400
+      fromLat: 40.8, fromLon: -73.95, toLat: 40.81, toLon: -73.94,
+    });
+    const it1 = itinerary([access, transitLeg(), egress], {
+      departTime: 31800,
+      arriveTime: 33400,
+    });
+    recomputeTiming(it1, 840 - 600, 500 - 400);
+    expect(it1.departTime).toBe(31800 - 240);
+    expect(it1.arriveTime).toBe(33400 + 100);
+    expect(it1.walkSeconds).toBe(840 + 500);
+    expect(it1.totalSeconds).toBe(it1.arriveTime - it1.departTime);
+  });
+
+  it("preserves hidden same-station transfer time (arrival anchored on old value, not alightTime)", () => {
+    // RAPTOR: alight 33000, hidden transfer 120s, estimated egress 400s
+    // => old arriveTime 33520, which is NOT alightTime + egress (33400)
+    const access = walkLeg();
+    const egress = walkLeg({
+      seconds: 460, // routed: was 400
+      fromLat: 40.8, fromLon: -73.95, toLat: 40.81, toLon: -73.94,
+    });
+    const it1 = itinerary([access, transitLeg(), egress], {
+      departTime: 31800,
+      arriveTime: 33520,
+    });
+    recomputeTiming(it1, 0, 460 - 400);
+    // the 120s hidden transfer survives: 33520 + 60, not 33000 + 460
+    expect(it1.arriveTime).toBe(33580);
+  });
+
+  it("allows departTime before the requested departure (documented PR 1 limitation)", () => {
+    // requested departure 31800; routed access is 300s longer than estimated
+    const access = walkLeg({ seconds: 900 });
+    const it1 = itinerary([access, transitLeg()], {
+      departTime: 31800,
+      arriveTime: 33400,
+    });
+    recomputeTiming(it1, 300, 0);
+    // honest recompute: departTime lands before 31800 and is NOT clamped
+    expect(it1.departTime).toBe(31500);
+  });
+
+  it("clamps waitSeconds at zero", () => {
+    // walk 2000s + ride 600s exceed the 1600s total: unclamped wait would
+    // be 1600 - 2000 - 600 = -1000
+    const access = walkLeg({ seconds: 2000 });
+    const it1 = itinerary([access, transitLeg()], {
+      departTime: 31800,
+      arriveTime: 33400,
+    });
+    recomputeTiming(it1, 0, 0);
+    expect(it1.waitSeconds).toBe(0);
+  });
+});
+
+describe("recomputeDirectWalk", () => {
+  it("keeps the requested departure and derives everything from routed seconds", () => {
+    const leg = walkLeg({ seconds: 1100 });
+    const it1 = itinerary([leg], { departTime: 31800, arriveTime: 32800, key: "walk-only" });
+    recomputeDirectWalk(it1, 1100);
+    expect(it1.departTime).toBe(31800);
+    expect(it1.arriveTime).toBe(32900);
+    expect(it1.walkSeconds).toBe(1100);
+    expect(it1.totalSeconds).toBe(1100);
+    expect(it1.waitSeconds).toBe(0);
   });
 });
