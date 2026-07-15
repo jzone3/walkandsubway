@@ -43,6 +43,9 @@ export interface WalkLeg {
   toLon: number;
   seconds: number;
   meters: number;
+  /** Routed path in Leaflet [lat, lon] order; absent when estimated. */
+  geometry?: [number, number][];
+  routingSource?: "openrouteservice" | "estimate";
 }
 
 export interface TransitLeg {
