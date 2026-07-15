@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { Itinerary, WalkLeg, TransitLeg } from "@/lib/types";
-import { collectTargets, recomputeDirectWalk, recomputeTiming } from "./hydrate";
+import { collectTargets, recomputeDirectWalk, recomputeTiming, hydrateWalkingGeometry } from "./hydrate";
+import { LruCache, walkPairKey } from "./cache";
+import { PedestrianPath, PedestrianRouter, RateLimitError } from "./types";
 
 export function walkLeg(overrides: Partial<WalkLeg> = {}): WalkLeg {
   return {
@@ -188,5 +190,185 @@ describe("recomputeDirectWalk", () => {
     expect(it1.walkSeconds).toBe(1100);
     expect(it1.totalSeconds).toBe(1100);
     expect(it1.waitSeconds).toBe(0);
+  });
+});
+
+function fakePath(seconds: number, meters = 900): PedestrianPath {
+  return {
+    seconds,
+    meters,
+    geometry: [
+      [40.758, -73.9855],
+      [40.76, -73.984],
+      [40.7681, -73.9819],
+    ],
+    provider: "openrouteservice",
+  };
+}
+
+function fakeRouter(
+  impl: (callCount: number) => Promise<PedestrianPath>
+): PedestrianRouter & { calls: number } {
+  const r = {
+    calls: 0,
+    async route() {
+      r.calls++;
+      return impl(r.calls);
+    },
+    async matrix(): Promise<never> {
+      throw new Error("unused");
+    },
+  };
+  return r;
+}
+
+describe("hydrateWalkingGeometry", () => {
+  it("writes geometry, routed values, and routingSource, and recomputes timing", async () => {
+    const access = walkLeg({ seconds: 600 });
+    const it1 = itinerary([access, transitLeg()], { departTime: 31800, arriveTime: 33400 });
+    const router = fakeRouter(async () => fakePath(840));
+    await hydrateWalkingGeometry(router, [it1], { cache: new LruCache(10, 1000) });
+    expect(access.geometry?.length).toBe(3);
+    expect(access.seconds).toBe(840);
+    expect(access.meters).toBe(900);
+    expect(access.routingSource).toBe("openrouteservice");
+    expect(it1.departTime).toBe(31800 - 240);
+    expect(it1.walkSeconds).toBe(840);
+  });
+
+  it("uses the directions result as canonical for the direct walk", async () => {
+    const leg = walkLeg({ seconds: 1000 });
+    const walkOnly = itinerary([leg], { departTime: 31800, arriveTime: 32800, key: "walk-only" });
+    const router = fakeRouter(async () => fakePath(1100));
+    await hydrateWalkingGeometry(router, [walkOnly], { cache: new LruCache(10, 1000) });
+    expect(walkOnly.arriveTime).toBe(31800 + 1100);
+    expect(walkOnly.totalSeconds).toBe(1100);
+  });
+
+  it("issues one request per unique pair and hydrates every matching leg", async () => {
+    const a1 = walkLeg();
+    const a2 = walkLeg();
+    const it1 = itinerary([a1, transitLeg()]);
+    const it2 = itinerary([a2, transitLeg()]);
+    const router = fakeRouter(async () => fakePath(700));
+    await hydrateWalkingGeometry(router, [it1, it2], { cache: new LruCache(10, 1000) });
+    expect(router.calls).toBe(1);
+    expect(a1.routingSource).toBe("openrouteservice");
+    expect(a2.routingSource).toBe("openrouteservice");
+  });
+
+  it("serves repeat searches from the cache with zero provider calls", async () => {
+    const cache = new LruCache<PedestrianPath>(10, 100000);
+    const router1 = fakeRouter(async () => fakePath(700));
+    await hydrateWalkingGeometry(router1, [itinerary([walkLeg(), transitLeg()])], { cache });
+    const router2 = fakeRouter(async () => fakePath(700));
+    const leg = walkLeg();
+    await hydrateWalkingGeometry(router2, [itinerary([leg, transitLeg()])], { cache });
+    expect(router2.calls).toBe(0);
+    expect(leg.routingSource).toBe("openrouteservice");
+  });
+
+  it("leaves estimates and endpoints intact on per-leg failure", async () => {
+    const access = walkLeg({ seconds: 600, meters: 800 });
+    const it1 = itinerary([access, transitLeg()], { departTime: 31800, arriveTime: 33400 });
+    const router = fakeRouter(async () => {
+      throw new Error("timeout");
+    });
+    await hydrateWalkingGeometry(router, [it1], { cache: new LruCache(10, 1000) });
+    expect(access.seconds).toBe(600);
+    expect(access.meters).toBe(800);
+    expect(access.geometry).toBeUndefined();
+    expect(access.routingSource).toBe("estimate");
+    expect(it1.departTime).toBe(31800); // timing untouched
+  });
+
+  it("stops issuing requests after a RateLimitError", async () => {
+    const legs = Array.from({ length: 6 }, (_, i) =>
+      walkLeg({ fromLat: 40.7 + i * 0.01, toLat: 40.71 + i * 0.01 })
+    );
+    const its = legs.map((l) => itinerary([l, transitLeg()]));
+    const router = fakeRouter(async (n) => {
+      if (n === 1) throw new RateLimitError("429");
+      return fakePath(700);
+    });
+    await hydrateWalkingGeometry(router, its, { cache: new LruCache(10, 1000) });
+    // concurrency is 4: at most the first wave was in flight when 429 hit
+    expect(router.calls).toBeLessThanOrEqual(4);
+    expect(legs.every((l) => l.routingSource !== undefined)).toBe(true);
+  });
+
+  it("never starts a request that cannot finish before the stage deadline", async () => {
+    const legs = Array.from({ length: 12 }, (_, i) =>
+      walkLeg({ fromLat: 40.7 + i * 0.01, toLat: 40.71 + i * 0.01 })
+    );
+    const its = legs.map((l) => itinerary([l, transitLeg()]));
+    let clock = 0;
+    const router = fakeRouter(async () => {
+      clock += 3500; // worst case: every request runs to its full timeout
+      return fakePath(700);
+    });
+    await hydrateWalkingGeometry(router, its, {
+      cache: new LruCache(100, 100000),
+      now: () => clock,
+    });
+    // scheduling window is deadline minus one full timeout (8000 - 3500):
+    // requests start at t=0 and t=3500; at t=7000 the remaining 1000ms
+    // cannot fit a 3500ms request, so exactly two are issued and the whole
+    // stage settles inside the 8000ms deadline
+    expect(router.calls).toBe(2);
+    expect(clock).toBeLessThanOrEqual(8000);
+  });
+
+  it("does not let cache hits consume the fetch cap", async () => {
+    const cache = new LruCache<PedestrianPath>(100, 100000);
+    const legs = Array.from({ length: 25 }, (_, i) =>
+      walkLeg({ fromLat: 40.5 + i * 0.01, toLat: 40.51 + i * 0.01 })
+    );
+    // pre-cache the first 24 pairs (they rank ahead of the last one)
+    for (const l of legs.slice(0, 24)) {
+      cache.set(
+        walkPairKey(
+          { lat: l.fromLat, lon: l.fromLon },
+          { lat: l.toLat, lon: l.toLon },
+          "openrouteservice"
+        ),
+        fakePath(700)
+      );
+    }
+    const its = legs.map((l) => itinerary([l, transitLeg()]));
+    const router = fakeRouter(async () => fakePath(700));
+    await hydrateWalkingGeometry(router, its, { cache });
+    expect(router.calls).toBe(1); // only the single miss is fetched
+    expect(legs.every((l) => l.routingSource === "openrouteservice")).toBe(true);
+  });
+
+  it("hydrates at most MAX_LEGS_TO_HYDRATE unique pairs, direct walk first", async () => {
+    const legs = Array.from({ length: 30 }, (_, i) =>
+      walkLeg({ fromLat: 40.5 + i * 0.01, toLat: 40.51 + i * 0.01 })
+    );
+    const its = legs.map((l) => itinerary([l, transitLeg()]));
+    const direct = walkLeg({ fromLat: 40.99, toLat: 41.0 });
+    its.push(itinerary([direct], { key: "walk-only" }));
+    const router = fakeRouter(async () => fakePath(700));
+    await hydrateWalkingGeometry(router, its, { cache: new LruCache(100, 1000) });
+    expect(router.calls).toBe(24);
+    expect(direct.routingSource).toBe("openrouteservice");
+    // some access legs beyond the cap kept their estimates
+    expect(legs.some((l) => l.routingSource === "estimate")).toBe(true);
+  });
+
+  it("never rejects even if the router throws synchronously", async () => {
+    const it1 = itinerary([walkLeg(), transitLeg()]);
+    const router = {
+      route() {
+        throw new Error("sync boom");
+      },
+      matrix() {
+        throw new Error("unused");
+      },
+    } as unknown as PedestrianRouter;
+    await expect(
+      hydrateWalkingGeometry(router, [it1], { cache: new LruCache(10, 1000) })
+    ).resolves.toBeUndefined();
   });
 });
