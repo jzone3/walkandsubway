@@ -26,18 +26,33 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  const cachePut = (req, copy) => {
+    event.waitUntil(
+      caches
+        .open(CACHE_NAME)
+        .then((cache) => cache.put(req, copy))
+        .catch(() => {})
+    );
+  };
+
+  const offlineResponse = () => new Response("", { status: 504, statusText: "offline" });
+
   // network-first for API routes and navigations
   if (url.pathname.startsWith("/api/") || request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (request.mode === "navigate" && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            cachePut(request, response.clone());
           }
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+        .catch(() =>
+          caches
+            .match(request)
+            .then((cached) => cached || caches.match("/"))
+            .then((cached) => cached || offlineResponse())
+        )
     );
     return;
   }
@@ -48,12 +63,11 @@ self.addEventListener("fetch", (event) => {
       const fetched = fetch(request)
         .then((response) => {
           if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            cachePut(request, response.clone());
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || offlineResponse());
       return cached || fetched;
     })
   );
