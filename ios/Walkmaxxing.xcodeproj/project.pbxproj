@@ -1,0 +1,414 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2E1FF29DB1F9D9FED9AAE29E /* ItineraryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE6BE17128152297BF874B9D /* ItineraryCardView.swift */; };
+		2E60BC115179A94D40697DBF /* Rank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96298BB417F518A0C8FE8E2E /* Rank.swift */; };
+		3F0A7F60967AC80EC04789AA /* RouteFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44E6FF94ABEF30F9ADDD6E34 /* RouteFlowTests.swift */; };
+		5B4C80C6A1BDA0F36707DFFB /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652C3907F60B8860C4680EBC /* API.swift */; };
+		6A77F0DE9962E38048636A6E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506BC86512821F16ADB7905F /* Models.swift */; };
+		A4F6C8BB57FEC617828FE39C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F0F5B2AE2DB4ED493A7403A /* ContentView.swift */; };
+		B1B57A40CC0D7A1BCB8796CA /* WalkmaxxingApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE7900C96459C565E043237 /* WalkmaxxingApp.swift */; };
+		EC2DF8FCF2D8057D2DB14C88 /* LocationField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D8D2D39A1DE8953C37C5C5 /* LocationField.swift */; };
+		F41797C19C6B7A82EDE0A2D3 /* TimeUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CFA477808081C00C47163 /* TimeUtil.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		58DA5150AD77639AA4BBAE3E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DF2929B8B3EF8FFA2E8B5B05 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0D644E638F3621EB92F20026;
+			remoteInfo = Walkmaxxing;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		110613AD27F19A67632D2725 /* WalkmaxxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WalkmaxxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		15D8D2D39A1DE8953C37C5C5 /* LocationField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationField.swift; sourceTree = "<group>"; };
+		44E6FF94ABEF30F9ADDD6E34 /* RouteFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteFlowTests.swift; sourceTree = "<group>"; };
+		506BC86512821F16ADB7905F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		652C3907F60B8860C4680EBC /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		7F0F5B2AE2DB4ED493A7403A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		8620E2A311FFBFE543187014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		96298BB417F518A0C8FE8E2E /* Rank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rank.swift; sourceTree = "<group>"; };
+		AE6BE17128152297BF874B9D /* ItineraryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItineraryCardView.swift; sourceTree = "<group>"; };
+		BCE7900C96459C565E043237 /* WalkmaxxingApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkmaxxingApp.swift; sourceTree = "<group>"; };
+		C92AEE560FB6CFB98E23A100 /* Walkmaxxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Walkmaxxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E88CFA477808081C00C47163 /* TimeUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeUtil.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		6A5F0C846A98F6794512D3E9 /* WalkmaxxingUITests */ = {
+			isa = PBXGroup;
+			children = (
+				44E6FF94ABEF30F9ADDD6E34 /* RouteFlowTests.swift */,
+			);
+			path = WalkmaxxingUITests;
+			sourceTree = "<group>";
+		};
+		714C99CFC95AB652F09145CB /* Walkmaxxing */ = {
+			isa = PBXGroup;
+			children = (
+				652C3907F60B8860C4680EBC /* API.swift */,
+				7F0F5B2AE2DB4ED493A7403A /* ContentView.swift */,
+				8620E2A311FFBFE543187014 /* Info.plist */,
+				AE6BE17128152297BF874B9D /* ItineraryCardView.swift */,
+				15D8D2D39A1DE8953C37C5C5 /* LocationField.swift */,
+				506BC86512821F16ADB7905F /* Models.swift */,
+				96298BB417F518A0C8FE8E2E /* Rank.swift */,
+				E88CFA477808081C00C47163 /* TimeUtil.swift */,
+				BCE7900C96459C565E043237 /* WalkmaxxingApp.swift */,
+			);
+			path = Walkmaxxing;
+			sourceTree = "<group>";
+		};
+		98F348DA3147E5842751A862 = {
+			isa = PBXGroup;
+			children = (
+				714C99CFC95AB652F09145CB /* Walkmaxxing */,
+				6A5F0C846A98F6794512D3E9 /* WalkmaxxingUITests */,
+				F4352FE414592666F97EC1CB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F4352FE414592666F97EC1CB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C92AEE560FB6CFB98E23A100 /* Walkmaxxing.app */,
+				110613AD27F19A67632D2725 /* WalkmaxxingUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0D644E638F3621EB92F20026 /* Walkmaxxing */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F083A74BAC12A41BE2E83D2 /* Build configuration list for PBXNativeTarget "Walkmaxxing" */;
+			buildPhases = (
+				FD78EB6798FE0E9CD33B2FC0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Walkmaxxing;
+			packageProductDependencies = (
+			);
+			productName = Walkmaxxing;
+			productReference = C92AEE560FB6CFB98E23A100 /* Walkmaxxing.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EAA649C5F1A5759268D69AC8 /* WalkmaxxingUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 331FDA049A8DDBAB86A960EA /* Build configuration list for PBXNativeTarget "WalkmaxxingUITests" */;
+			buildPhases = (
+				34EFBDC25B1CE59E8D7D68E8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2A1DB05FE837457C5B895CB9 /* PBXTargetDependency */,
+			);
+			name = WalkmaxxingUITests;
+			packageProductDependencies = (
+			);
+			productName = WalkmaxxingUITests;
+			productReference = 110613AD27F19A67632D2725 /* WalkmaxxingUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DF2929B8B3EF8FFA2E8B5B05 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					EAA649C5F1A5759268D69AC8 = {
+						TestTargetID = 0D644E638F3621EB92F20026;
+					};
+				};
+			};
+			buildConfigurationList = 438ABC0BADC1784E3116E714 /* Build configuration list for PBXProject "Walkmaxxing" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 98F348DA3147E5842751A862;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F4352FE414592666F97EC1CB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0D644E638F3621EB92F20026 /* Walkmaxxing */,
+				EAA649C5F1A5759268D69AC8 /* WalkmaxxingUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		34EFBDC25B1CE59E8D7D68E8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F0A7F60967AC80EC04789AA /* RouteFlowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FD78EB6798FE0E9CD33B2FC0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B4C80C6A1BDA0F36707DFFB /* API.swift in Sources */,
+				A4F6C8BB57FEC617828FE39C /* ContentView.swift in Sources */,
+				2E1FF29DB1F9D9FED9AAE29E /* ItineraryCardView.swift in Sources */,
+				EC2DF8FCF2D8057D2DB14C88 /* LocationField.swift in Sources */,
+				6A77F0DE9962E38048636A6E /* Models.swift in Sources */,
+				2E60BC115179A94D40697DBF /* Rank.swift in Sources */,
+				F41797C19C6B7A82EDE0A2D3 /* TimeUtil.swift in Sources */,
+				B1B57A40CC0D7A1BCB8796CA /* WalkmaxxingApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2A1DB05FE837457C5B895CB9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0D644E638F3621EB92F20026 /* Walkmaxxing */;
+			targetProxy = 58DA5150AD77639AA4BBAE3E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		11B7AB1E4372C24C5075AA35 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		1B1E16A9625EA819D4AC7447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		7420C7624C18541C3BCD48E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Walkmaxxing/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkandsubway.Walkmaxxing;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A5812CBE07FBBB0DE4F30D0B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkandsubway.WalkmaxxingUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Walkmaxxing;
+			};
+			name = Release;
+		};
+		AE664B63B04AF3891980E191 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Walkmaxxing/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkandsubway.Walkmaxxing;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B36FA174BB8AD8559AF40BCB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkandsubway.WalkmaxxingUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Walkmaxxing;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		331FDA049A8DDBAB86A960EA /* Build configuration list for PBXNativeTarget "WalkmaxxingUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B36FA174BB8AD8559AF40BCB /* Debug */,
+				A5812CBE07FBBB0DE4F30D0B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		438ABC0BADC1784E3116E714 /* Build configuration list for PBXProject "Walkmaxxing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1B1E16A9625EA819D4AC7447 /* Debug */,
+				11B7AB1E4372C24C5075AA35 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4F083A74BAC12A41BE2E83D2 /* Build configuration list for PBXNativeTarget "Walkmaxxing" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE664B63B04AF3891980E191 /* Debug */,
+				7420C7624C18541C3BCD48E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DF2929B8B3EF8FFA2E8B5B05 /* Project object */;
+}
