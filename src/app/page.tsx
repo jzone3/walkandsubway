@@ -8,7 +8,7 @@ import ItineraryCard from "@/components/ItineraryCard";
 import { Itinerary } from "@/lib/types";
 import { rankItineraries } from "@/lib/rank";
 import { nowInNY, dayBitFromDateStr, secondsFromTimeStr } from "@/lib/time";
-import { buildSearchParams, parsePlaceParam } from "@/lib/searchParams";
+import { buildSearchParams, parsePlaceParam, OWN_PARAMS } from "@/lib/searchParams";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -43,7 +43,9 @@ export default function Home() {
       const q = new URLSearchParams(window.location.search);
       const from = parsePlaceParam(q.get("from"));
       const to = parsePlaceParam(q.get("to"));
-      if (from || to) {
+      const hasParams =
+        from || to || q.get("s") !== null || q.get("xfer") !== null || !!q.get("avoid");
+      if (hasParams) {
         if (from) setOrigin(from);
         if (to) setDest(to);
         if (q.get("s") !== null) setSlider(+q.get("s")!);
@@ -68,8 +70,10 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated) return;
     const q = buildSearchParams({ origin, dest, slider, maxTransfers, avoidLines });
+    for (const [k, v] of new URLSearchParams(window.location.search))
+      if (!OWN_PARAMS.has(k)) q.append(k, v);
     const qs = q.toString();
-    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
     window.history.replaceState(null, "", url);
   }, [hydrated, origin, dest, slider, maxTransfers, avoidLines]);
 

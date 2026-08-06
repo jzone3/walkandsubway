@@ -1,5 +1,7 @@
 import { Place } from "@/components/LocationInput";
 
+export const OWN_PARAMS = new Set(["from", "to", "s", "xfer", "avoid"]);
+
 export type SearchState = {
   origin: Place | null;
   dest: Place | null;
