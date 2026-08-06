@@ -50,7 +50,7 @@ self.addEventListener("fetch", (event) => {
         .catch(() =>
           caches
             .match(request)
-            .then((cached) => cached || caches.match("/"))
+            .then((cached) => cached || (request.mode === "navigate" ? caches.match("/") : undefined))
             .then((cached) => cached || offlineResponse())
         )
     );
