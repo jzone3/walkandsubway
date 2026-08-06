@@ -31,6 +31,7 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(10);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [delays, setDelays] = useState<Record<string, number>>({});
+  const [allLines, setAllLines] = useState<{ id: string; name: string; longName?: string; color: string }[]>([]);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
   useEffect(() => {
@@ -93,14 +94,23 @@ export default function Home() {
   }, [origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
+    fetch("/api/lines")
+      .then((r) => r.json())
+      .then((d) => setAllLines(d.lines ?? []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     fetch("/api/rt")
       .then((r) => r.json())
       .then((d) => setDelays(d.routeDelays ?? {}))
       .catch(() => {});
   }, []);
 
+  const reqSeq = useRef(0);
   const go = useCallback(async () => {
     if (!origin || !dest || !dateStr || !timeStr) return;
+    const seq = ++reqSeq.current;
     setLoading(true);
     setError(null);
     try {
@@ -114,10 +124,12 @@ export default function Home() {
           toLon: dest.lon,
           departTime: secondsFromTimeStr(timeStr),
           dayBit: dayBitFromDateStr(dateStr),
+          avoid: [...avoidLines],
         }),
       });
       if (!res.ok) throw new Error(`routing failed (${res.status})`);
       const data = await res.json();
+      if (seq !== reqSeq.current) return;
       setItins(data.itineraries);
       setSelectedKey(null);
       setStarred(new Set());
@@ -126,24 +138,16 @@ export default function Home() {
       setShowSmartPicks(false);
       setVisibleCount(10);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "something went wrong");
+      if (seq === reqSeq.current) setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
-      setLoading(false);
+      if (seq === reqSeq.current) setLoading(false);
     }
-  }, [origin, dest, dateStr, timeStr]);
+  }, [origin, dest, dateStr, timeStr, avoidLines]);
 
   useEffect(() => {
     if (origin && dest) void go();
   }, [origin, dest, go]);
 
-  const allLines = useMemo(() => {
-    const m = new Map<string, { id: string; name: string; color: string }>();
-    for (const it of itins ?? [])
-      for (const l of it.legs)
-        if (l.kind === "transit" && !m.has(l.routeId))
-          m.set(l.routeId, { id: l.routeId, name: l.routeName, color: l.routeColor });
-    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-  }, [itins]);
   const usable = useMemo(
     () =>
       itins
@@ -350,6 +354,7 @@ export default function Home() {
                       <button
                         key={r.id}
                         aria-label={`${off ? "allow" : "avoid"} ${r.name}`}
+                        title={r.longName ?? r.name}
                         onClick={() =>
                           setAvoidLines((prev) => {
                             const next = new Set(prev);
