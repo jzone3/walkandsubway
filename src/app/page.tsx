@@ -8,6 +8,7 @@ import ItineraryCard from "@/components/ItineraryCard";
 import { Itinerary } from "@/lib/types";
 import { rankItineraries } from "@/lib/rank";
 import { nowInNY, dayBitFromDateStr, secondsFromTimeStr } from "@/lib/time";
+import { buildSearchParams, parsePlaceParam } from "@/lib/searchParams";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -32,6 +33,7 @@ export default function Home() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [delays, setDelays] = useState<Record<string, number>>({});
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const now = nowInNY();
@@ -39,19 +41,15 @@ export default function Home() {
     setTimeStr(now.timeStr);
     try {
       const q = new URLSearchParams(window.location.search);
-      const parsePlace = (v: string | null): Place | null => {
-        if (!v) return null;
-        const [label, lat, lon] = v.split("|");
-        return label && isFinite(+lat) && isFinite(+lon) ? { label, lat: +lat, lon: +lon } : null;
-      };
-      const from = parsePlace(q.get("from"));
-      const to = parsePlace(q.get("to"));
+      const from = parsePlaceParam(q.get("from"));
+      const to = parsePlaceParam(q.get("to"));
       if (from || to) {
         if (from) setOrigin(from);
         if (to) setDest(to);
         if (q.get("s") !== null) setSlider(+q.get("s")!);
         if (q.get("xfer") !== null) setMaxTransfers(+q.get("xfer")!);
         if (q.get("avoid")) setAvoidLines(new Set(q.get("avoid")!.split(",")));
+        setHydrated(true);
         return;
       }
       const saved = localStorage.getItem("walkmaxxing:lastSearch");
@@ -64,7 +62,16 @@ export default function Home() {
         if (Array.isArray(s.avoidLines)) setAvoidLines(new Set(s.avoidLines));
       }
     } catch {}
+    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const q = buildSearchParams({ origin, dest, slider, maxTransfers, avoidLines });
+    const qs = q.toString();
+    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", url);
+  }, [hydrated, origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
     if (!origin && !dest) return;
@@ -78,19 +85,11 @@ export default function Home() {
 
   const [shareCopied, setShareCopied] = useState(false);
   const share = useCallback(() => {
-    const q = new URLSearchParams();
-    if (origin) q.set("from", `${origin.label}|${origin.lat.toFixed(5)}|${origin.lon.toFixed(5)}`);
-    if (dest) q.set("to", `${dest.label}|${dest.lat.toFixed(5)}|${dest.lon.toFixed(5)}`);
-    q.set("s", String(slider));
-    if (maxTransfers >= 0) q.set("xfer", String(maxTransfers));
-    if (avoidLines.size > 0) q.set("avoid", [...avoidLines].join(","));
-    void navigator.clipboard
-      .writeText(`${window.location.origin}/?${q.toString()}`)
-      .then(() => {
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 1500);
-      });
-  }, [origin, dest, slider, maxTransfers, avoidLines]);
+    void navigator.clipboard.writeText(window.location.href).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    });
+  }, []);
 
   useEffect(() => {
     fetch("/api/rt")
