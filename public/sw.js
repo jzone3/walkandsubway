@@ -26,14 +26,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  const cachePut = (req, copy) => {
-    event.waitUntil(
-      caches
-        .open(CACHE_NAME)
-        .then((cache) => cache.put(req, copy))
-        .catch(() => {})
-    );
-  };
+  const cachePut = (req, copy) =>
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.put(req, copy))
+      .catch(() => {});
 
   const offlineResponse = () => new Response("", { status: 504, statusText: "offline" });
 
@@ -42,8 +39,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (request.mode === "navigate" && response.ok) {
-            cachePut(request, response.clone());
+          if (response.ok) {
+            // key navigations on "/" so per-query URLs don't grow the cache unboundedly
+            if (request.mode === "navigate") event.waitUntil(cachePut("/", response.clone()));
+            else if (url.pathname === "/api/lines") event.waitUntil(cachePut(request, response.clone()));
           }
           return response;
         })

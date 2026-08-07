@@ -49,8 +49,10 @@ export default function Home() {
       if (hasParams) {
         if (from) setOrigin(from);
         if (to) setDest(to);
-        if (q.get("s") !== null) setSlider(+q.get("s")!);
-        if (q.get("xfer") !== null) setMaxTransfers(+q.get("xfer")!);
+        const s = q.get("s");
+        if (s !== null && s !== "" && Number.isFinite(+s)) setSlider(+s);
+        const xfer = q.get("xfer");
+        if (xfer !== null && xfer !== "" && Number.isFinite(+xfer)) setMaxTransfers(+xfer);
         if (q.get("avoid")) setAvoidLines(new Set(q.get("avoid")!.split(",")));
         setHydrated(true);
         return;
