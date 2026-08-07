@@ -54,8 +54,9 @@ export function route(tt: Timetable, req: RouteRequest): Itinerary[] {
   const dayMask = 1 << req.dayBit;
   const banned = new Set<number>();
   if (req.banRouteIds?.length) {
+    const banIds = new Set(req.banRouteIds);
     tt.routes.forEach((r, i) => {
-      if (req.banRouteIds!.includes(r.id)) banned.add(i);
+      if (banIds.has(r.id)) banned.add(i);
     });
   }
 

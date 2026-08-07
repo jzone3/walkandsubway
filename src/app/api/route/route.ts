@@ -9,6 +9,9 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { fromLat, fromLon, toLat, toLon, departTime, dayBit } = body;
+  const avoid: string[] = Array.isArray(body.avoid)
+    ? body.avoid.filter((v: unknown): v is string => typeof v === "string")
+    : [];
   if (
     [fromLat, fromLon, toLat, toLon, departTime, dayBit].some(
       (v) => typeof v !== "number" || Number.isNaN(v)
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
   };
   for (const mins of [10, 20, 35]) {
-    collect(route(tt, { ...base, maxAccessWalkSeconds: mins * 60 }));
+    collect(route(tt, { ...base, maxAccessWalkSeconds: mins * 60, banRouteIds: avoid }));
   }
   // rerun with the dominant routes banned so alternative lines/buses surface
   const usedRoutes = new Set<string>();
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
       for (const l of it.legs) if (l.kind === "transit") usedRoutes.add(l.routeId);
     }
     if (usedRoutes.size === 0) break;
-    collect(route(tt, { ...base, maxAccessWalkSeconds: 25 * 60, banRouteIds: [...usedRoutes] }));
+    collect(route(tt, { ...base, maxAccessWalkSeconds: 25 * 60, banRouteIds: [...new Set([...usedRoutes, ...avoid])] }));
   }
   // walk-trading permutations: board farther along the line / get off early
   for (const v of walkVariants(base, [...itineraries])) {
