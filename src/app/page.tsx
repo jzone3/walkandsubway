@@ -8,6 +8,7 @@ import ItineraryCard from "@/components/ItineraryCard";
 import { Itinerary } from "@/lib/types";
 import { rankItineraries } from "@/lib/rank";
 import { nowInNY, dayBitFromDateStr, secondsFromTimeStr } from "@/lib/time";
+import { buildSearchParams, parsePlaceParam, OWN_PARAMS } from "@/lib/searchParams";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -31,7 +32,9 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(10);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [delays, setDelays] = useState<Record<string, number>>({});
+  const [allLines, setAllLines] = useState<{ id: string; name: string; longName?: string; color: string }[]>([]);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const now = nowInNY();
@@ -39,19 +42,19 @@ export default function Home() {
     setTimeStr(now.timeStr);
     try {
       const q = new URLSearchParams(window.location.search);
-      const parsePlace = (v: string | null): Place | null => {
-        if (!v) return null;
-        const [label, lat, lon] = v.split("|");
-        return label && isFinite(+lat) && isFinite(+lon) ? { label, lat: +lat, lon: +lon } : null;
-      };
-      const from = parsePlace(q.get("from"));
-      const to = parsePlace(q.get("to"));
-      if (from || to) {
+      const from = parsePlaceParam(q.get("from"));
+      const to = parsePlaceParam(q.get("to"));
+      const hasParams =
+        from || to || q.get("s") !== null || q.get("xfer") !== null || !!q.get("avoid");
+      if (hasParams) {
         if (from) setOrigin(from);
         if (to) setDest(to);
-        if (q.get("s") !== null) setSlider(+q.get("s")!);
-        if (q.get("xfer") !== null) setMaxTransfers(+q.get("xfer")!);
+        const s = q.get("s");
+        if (s !== null && s !== "" && Number.isFinite(+s)) setSlider(+s);
+        const xfer = q.get("xfer");
+        if (xfer !== null && xfer !== "" && Number.isFinite(+xfer)) setMaxTransfers(+xfer);
         if (q.get("avoid")) setAvoidLines(new Set(q.get("avoid")!.split(",")));
+        setHydrated(true);
         return;
       }
       const saved = localStorage.getItem("walkmaxxing:lastSearch");
@@ -64,7 +67,18 @@ export default function Home() {
         if (Array.isArray(s.avoidLines)) setAvoidLines(new Set(s.avoidLines));
       }
     } catch {}
+    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const q = buildSearchParams({ origin, dest, slider, maxTransfers, avoidLines });
+    for (const [k, v] of new URLSearchParams(window.location.search))
+      if (!OWN_PARAMS.has(k)) q.append(k, v);
+    const qs = q.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", url);
+  }, [hydrated, origin, dest, slider, maxTransfers, avoidLines]);
 
   useEffect(() => {
     if (!origin && !dest) return;
@@ -78,19 +92,18 @@ export default function Home() {
 
   const [shareCopied, setShareCopied] = useState(false);
   const share = useCallback(() => {
-    const q = new URLSearchParams();
-    if (origin) q.set("from", `${origin.label}|${origin.lat.toFixed(5)}|${origin.lon.toFixed(5)}`);
-    if (dest) q.set("to", `${dest.label}|${dest.lat.toFixed(5)}|${dest.lon.toFixed(5)}`);
-    q.set("s", String(slider));
-    if (maxTransfers >= 0) q.set("xfer", String(maxTransfers));
-    if (avoidLines.size > 0) q.set("avoid", [...avoidLines].join(","));
-    void navigator.clipboard
-      .writeText(`${window.location.origin}/?${q.toString()}`)
-      .then(() => {
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 1500);
-      });
-  }, [origin, dest, slider, maxTransfers, avoidLines]);
+    void navigator.clipboard.writeText(window.location.href).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/lines")
+      .then((r) => r.json())
+      .then((d) => setAllLines(d.lines ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/rt")
@@ -99,8 +112,12 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  const reqSeq = useRef(0);
+  const lastSearchId = useRef<string | null>(null);
   const go = useCallback(async () => {
     if (!origin || !dest || !dateStr || !timeStr) return;
+    const seq = ++reqSeq.current;
+    const searchId = `${origin.lat},${origin.lon}>${dest.lat},${dest.lon}@${dateStr}T${timeStr}`;
     setLoading(true);
     setError(null);
     try {
@@ -114,36 +131,36 @@ export default function Home() {
           toLon: dest.lon,
           departTime: secondsFromTimeStr(timeStr),
           dayBit: dayBitFromDateStr(dateStr),
+          avoid: [...avoidLines],
         }),
       });
       if (!res.ok) throw new Error(`routing failed (${res.status})`);
       const data = await res.json();
+      if (seq !== reqSeq.current) return;
       setItins(data.itineraries);
-      setSelectedKey(null);
-      setStarred(new Set());
-      setSliderTouched(false);
-      setShowStarred(false);
-      setShowSmartPicks(false);
       setVisibleCount(10);
+      // keep stars/selection/view when only the avoid filter changed
+      if (searchId !== lastSearchId.current) {
+        lastSearchId.current = searchId;
+        setSelectedKey(null);
+        setStarred(new Set());
+        setSliderTouched(false);
+        setShowStarred(false);
+        setShowSmartPicks(false);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "something went wrong");
+      if (seq === reqSeq.current) setError(e instanceof Error ? e.message : "something went wrong");
     } finally {
-      setLoading(false);
+      if (seq === reqSeq.current) setLoading(false);
     }
-  }, [origin, dest, dateStr, timeStr]);
+  }, [origin, dest, dateStr, timeStr, avoidLines]);
 
   useEffect(() => {
-    if (origin && dest) void go();
+    if (!origin || !dest) return;
+    const t = setTimeout(() => void go(), 350);
+    return () => clearTimeout(t);
   }, [origin, dest, go]);
 
-  const allLines = useMemo(() => {
-    const m = new Map<string, { id: string; name: string; color: string }>();
-    for (const it of itins ?? [])
-      for (const l of it.legs)
-        if (l.kind === "transit" && !m.has(l.routeId))
-          m.set(l.routeId, { id: l.routeId, name: l.routeName, color: l.routeColor });
-    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-  }, [itins]);
   const usable = useMemo(
     () =>
       itins
@@ -350,6 +367,7 @@ export default function Home() {
                       <button
                         key={r.id}
                         aria-label={`${off ? "allow" : "avoid"} ${r.name}`}
+                        title={r.longName || r.name}
                         onClick={() =>
                           setAvoidLines((prev) => {
                             const next = new Set(prev);
